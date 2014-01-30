@@ -1,0 +1,6 @@
+cd shr-core
+. ./setup-env
+export MACHINE=qemuarm
+openembedded-core/scripts/sstate-diff-machines.sh --machines="qemuarm qemux86 qemux86-64" --targets=world --tmpdir=tmp-eglibc/;
+if [ ! -d sstate-diff ]; then mkdir sstate-diff; fi
+mv tmp-eglibc/sstate-diff/* sstate-diff

@@ -1,0 +1,51 @@
+#!/bin/bash
+
+cd shr-core
+. ./setup-env
+
+LOGDIR=log.world.`date "+%Y%m%d_%H%M%S"`.log
+mkdir ${LOGDIR}
+rm -rf tmp-eglibc/*;
+mkdir tmp-eglibc || echo "tmp-eglibc already exists"
+mount | grep "tmp-eglibc type tmpfs" && echo "Some tmp-eglibc already has tmpfs mounted, skipping mount" || mount tmp-eglibc
+
+openembedded-core/scripts/sstate-diff-machines.sh --machines="qemuarm qemux86 qemux86copy" --targets=world --tmpdir=tmp-eglibc/ | tee signatures.sstate-diff-machines
+
+function compareSignatures() {
+  MACHINE1=$1
+  MACHINE2=$2
+  PATTERN=$3
+  PRE_PATTERN=""
+  [ -n "${PATTERN}" ] || PRE_PATTERN="-v"
+  [ -n "${PATTERN}" ] || PATTERN="MACHINE"
+  for TASK in do_configure.sigdata do_populate_sysroot.sigdata do_package_write_ipk.sigdata; do
+    printf "\n\n === Comparing signatures for task ${TASK} between ${MACHINE1} and ${MACHINE2} ===\n"
+    diff tmp-eglibc/sstate-diff/*/${MACHINE1}/list.M tmp-eglibc/sstate-diff/*/${MACHINE2}/list.M | grep ${PRE_PATTERN} "${PATTERN}" | grep ${TASK} > signatures.${TASK}
+    for i in `cat signatures.${TASK} | sed 's#[^/]*/\([^/]*\)/.*#\1#g' | sort -u | xargs`; do
+      [ -e BUILD/sstate-diff/*/${MACHINE1}/*/$i/*${TASK}* ] || echo "Task ${i}.${TASK} doesn't exist in ${MACHINE1}" >&2
+      [ -e BUILD/sstate-diff/*/${MACHINE1}/*/$i/*${TASK}* ] || continue
+      [ -e BUILD/sstate-diff/*/${MACHINE2}/*/$i/*${TASK}* ] || echo "Task ${i}.${TASK} doesn't exist in ${MACHINE2}" >&2
+      [ -e BUILD/sstate-diff/*/${MACHINE2}/*/$i/*${TASK}* ] || continue
+      printf "\n == Comparing signatures for ${i}.${TASK} between ${MACHINE1} and ${MACHINE2} ==\n"
+
+      printf "# (R)DEPENDS on \nPACKAGE_ARCH_pn-$i = \"\${MACHINE_ARCH}\"\n";
+      bitbake-diffsigs tmp-eglibc/sstate-diff/*/${MACHINE1}/*/$i/*${TASK}* tmp-eglibc/sstate-diff/*/${MACHINE2}/*/$i/*${TASK}*;
+      echo
+    done | tee signatures.${TASK}.inc
+  done
+}
+
+# TUNE_PKGARCH should be the same between qemux86 and qemux86copy
+compareSignatures qemux86 qemux86copy | tee signatures.qemux86
+
+# native and allarch should be the same for all MACHINES
+compareSignatures qemux86 qemuarm "\(^< all\)\|\(^< x86_64-linux\)" | tee signatures.qemu
+
+mv signatures* ${LOGDIR}
+rsync -avir ${LOGDIR} jenkins@logs.nslu2-linux.org:htdocs/buildlogs/oe/oe-shr-core-branches
+
+if [ ! -d sstate-diff ]; then mkdir sstate-diff; fi
+mv tmp-eglibc/sstate-diff/* sstate-diff
+
+umount tmp-eglibc || echo "Umounting tmp-eglibc failed"
+rm -rf tmp-eglibc/*;
