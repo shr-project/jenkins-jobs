@@ -68,6 +68,9 @@ function parse_job_name {
         *_workspace-prepare)
             BUILD_TYPE="prepare"
             ;;
+        *_workspace-parse-results)
+            BUILD_TYPE="parse-results"
+            ;;
         *_test-dependencies_*)
             BUILD_TYPE="test-dependencies"
             ;;
@@ -377,6 +380,131 @@ function run_test-dependencies {
     exit ${RESULT}
 }
 
+function run_parse-results {
+    if [ -z "${BUILD_LOG_WORLD_DIRS}" ] ; then
+        echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} BUILD_LOG_WORLD_DIRS is empty, it should contain 3 log.world.20*.log directories for qemuarm, qemux86, qemux86-64 logs (in this order). Or 'LATEST' to take 3 newest ones."
+        exit 1
+    fi
+    if [ "${BUILD_LOG_WORLD_DIRS}" = "LATEST" ] ; then
+        BUILD_LOG_WORLD_DIRS=`ls -d log.world.20*.log/ | sort | tail -n 3 | xargs`
+    fi
+    show-failed-tasks ${BUILD_LOG_WORLD_DIRS}
+}
+
+function show-failed-tasks {
+    if [ $# -ne 3 ] ; then
+        echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} show-failed-tasks needs 3 params: dir-qemuarm dir-qemux86 dir-qemux86_64"
+        exit 1
+    fi
+
+    qemuarm=$1
+    qemux86=$2
+    qemux86_64=$3
+
+    machines="qemuarm qemux86 qemux86_64"
+    root=http://logs.nslu2-linux.org/buildlogs/oe/world/
+    prefix="  /home/jenkins/oe/world/shr-core/"
+
+    for M in $machines; do
+        log=$(eval echo "\$${M}")/bitbake.log
+        MM=${M/_/-}
+        echo $log
+        if ! grep "^MACHINE           = \"${MM}\"" ${log}; then
+            echo "ERROR: log $log, isn't for MACHINE ${M}"
+            exit 1
+        fi
+    done
+
+    TMPDIR=`mktemp -d`
+    for M in $machines; do
+        log=$(eval echo "\$${M}")/bitbake.log
+        grep "^${prefix}" ${log} | sed "s#^${prefix}##g;" > $TMPDIR/$M
+    done
+
+    cat $TMPDIR/* | sort -u > $TMPDIR/all
+
+    cat $TMPDIR/all | while read F; do
+        #  echo "^${F}"
+        if grep -q "^${F}" $TMPDIR/qemuarm && grep -q "^${F}" $TMPDIR/qemux86 && grep -q "^${F}" $TMPDIR/qemux86_64 ; then
+            echo "    * $F" >> $TMPDIR/common
+        elif grep -q "^${F}" $TMPDIR/qemux86 && grep -q "^${F}" $TMPDIR/qemux86_64 ; then
+            echo "    * $F" >> $TMPDIR/common-x86
+        elif grep -q "^${F}" $TMPDIR/qemuarm; then
+            echo "    * $F" >> $TMPDIR/common-qemuarm
+        elif grep -q "^${F}" $TMPDIR/qemux86; then
+            echo "    * $F" >> $TMPDIR/common-qemux86
+        elif grep -q "^${F}" $TMPDIR/qemux86_64; then
+            echo "    * $F" >> $TMPDIR/common-qemux86_64
+        fi
+    done
+
+    printf "\n== Number of issues - stats ==\n"
+    printf "{| class='wikitable'\n"
+    printf "!|Date\t\t     !!colspan='3'|Failed tasks\t\t\t    !!colspan='3'|QA\n"
+    printf "|-\n"
+    printf "||\t\t"
+    for M in $machines; do
+        printf "||$M\t"
+    done
+    for M in $machines; do
+        printf "||$M\t"
+    done
+    printf "\n|-\n||`date +%Y-%m-%d`\t"
+    for M in $machines; do
+        printf "||`cat $TMPDIR/${M} | wc -l`\t\t"
+    done
+    for M in $machines; do
+        log=$(eval echo "\$${M}")/qa.log
+        printf "||`cat ${log} | wc -l`\t\t"
+    done
+    printf "\n|}\n"
+
+    printf "\nhttp://www.openembedded.org/wiki/Bitbake_World_Status\n"
+
+    printf "\n== Failed tasks `date +%Y-%m-%d` ==\n"
+    printf "\n=== common (`test -e $TMPDIR/common && cat $TMPDIR/common | wc -l`) ===\n"; test -e $TMPDIR/common && cat $TMPDIR/common 2>/dev/null
+    printf "\n=== common-x86 (`cat $TMPDIR/common-x86 2>/dev/null | wc -l`) ===\n"; cat $TMPDIR/common-x86 2>/dev/null
+    for M in $machines; do
+        printf "\n=== $M (`cat $TMPDIR/common-$M 2>/dev/null | wc -l`) ===\n"; cat $TMPDIR/common-$M 2>/dev/null
+    done
+
+    printf "\n=== Number of failed tasks ===\n"
+    printf '{| class='wikitable'\n'
+    for M in $machines; do
+        log=${root}/$(eval echo "\$${M}")/
+        log_file=$(eval echo "\$${M}")/bitbake.log
+        link=`grep http://errors.yocto $log_file | sed 's@.*http://@http://@g'`
+        printf "|-\n||$M\t||`cat $TMPDIR/${M} | wc -l`\t||$log||$link\n"
+    done
+    printf "|}\n"
+
+    rm -rf $TMPDIR
+
+    echo "PNBLACKLISTs:";
+    for i in openembedded-core/ meta-*; do
+        cd $i;
+        echo "$i:";
+        git grep '^PNBLACKLIST\[.*=' . | tee;
+        cd ..;
+    done | grep -v shr.conf | grep -v documentation.conf;
+    grep ^PNBLACKLIST conf/world_*
+
+    echo "QA issues counts:"
+    for t in already-stripped libdir textrel build-deps file-rdeps version-going-backwards; do
+        count=`cat $qemuarm/qa.log $qemux86/qa.log $qemux86_64/qa.log | sort -u | grep "\[$t\]" | wc -l`;
+        echo "$count   $t:";
+    done;
+
+    echo; echo;
+    echo "QA issues by type:"
+    for t in already-stripped libdir textrel build-deps file-rdeps version-going-backwards; do
+        count=`cat $qemuarm/qa.log $qemux86/qa.log $qemux86_64/qa.log | sort -u | grep "\[$t\]" | wc -l`;
+        echo "$count   $t:";
+        cat $qemuarm/qa.log $qemux86/qa.log $qemux86_64/qa.log | sort -u | grep "\[$t\]" | sed 's#/home/jenkins/oe/world/shr-core/tmp-glibc/#/tmp/#g';
+        echo; echo;
+    done
+}
+
 print_timestamp start
 parse_job_name
 
@@ -397,6 +525,9 @@ case ${BUILD_TYPE} in
         ;;
     build)
         run_build
+        ;;
+    parse-results)
+        run_parse-results
         ;;
     *)
         echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} Unrecognized build type: '${BUILD_TYPE}', script doesn't know how to execute such job"
