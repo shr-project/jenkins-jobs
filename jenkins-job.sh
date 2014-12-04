@@ -381,6 +381,7 @@ function run_test-dependencies {
 }
 
 function run_parse-results {
+    cd ${BUILD_TOPDIR}
     if [ -z "${BUILD_LOG_WORLD_DIRS}" ] ; then
         echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} BUILD_LOG_WORLD_DIRS is empty, it should contain 3 log.world.20*.log directories for qemuarm, qemux86, qemux86-64 logs (in this order). Or 'LATEST' to take 3 newest ones."
         exit 1
@@ -403,7 +404,7 @@ function show-failed-tasks {
 
     machines="qemuarm qemux86 qemux86_64"
     root=http://logs.nslu2-linux.org/buildlogs/oe/world/
-    prefix="  /home/jenkins/oe/world/shr-core/"
+    prefix="  ${BUILD_TOPDIR}"
 
     for M in $machines; do
         log=$(eval echo "\$${M}")/bitbake.log
@@ -500,7 +501,7 @@ function show-failed-tasks {
     for t in already-stripped libdir textrel build-deps file-rdeps version-going-backwards; do
         count=`cat $qemuarm/qa.log $qemux86/qa.log $qemux86_64/qa.log | sort -u | grep "\[$t\]" | wc -l`;
         echo "$count   $t:";
-        cat $qemuarm/qa.log $qemux86/qa.log $qemux86_64/qa.log | sort -u | grep "\[$t\]" | sed 's#/home/jenkins/oe/world/shr-core/tmp-glibc/#/tmp/#g';
+        cat $qemuarm/qa.log $qemux86/qa.log $qemux86_64/qa.log | sort -u | grep "\[$t\]" | sed "s#${BUILD_TOPDIR}/tmp-glibc/#/tmp/#g";
         echo; echo;
     done
 }
