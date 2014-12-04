@@ -394,6 +394,27 @@ function run_parse-results {
     rsync -avir ${LOG} jenkins@logs.nslu2-linux.org:htdocs/buildlogs/oe/world
 }
 
+function show-pnblacklists {
+    echo "PNBLACKLISTs:";
+    for i in openembedded-core/ meta-*; do
+        cd $i;
+        echo "$i:";
+        git grep '^PNBLACKLIST\[.*=' . | tee;
+        cd ..;
+    done | grep -v shr.conf | grep -v documentation.conf;
+    grep ^PNBLACKLIST conf/world_*
+}
+
+function show-qa-issues {
+    echo "QA issues by type:"
+    for t in already-stripped libdir textrel build-deps file-rdeps version-going-backwards; do
+        count=`cat $qemuarm/qa.log $qemux86/qa.log $qemux86_64/qa.log | sort -u | grep "\[$t\]" | wc -l`;
+        printf "count: $count\tissue: $t\n";
+        cat $qemuarm/qa.log $qemux86/qa.log $qemux86_64/qa.log | sort -u | grep "\[$t\]" | sed "s#${BUILD_TOPDIR}/tmp-glibc/#/tmp/#g";
+        echo; echo;
+    done
+}
+
 function show-failed-tasks {
     if [ $# -ne 3 ] ; then
         echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} show-failed-tasks needs 3 params: dir-qemuarm dir-qemux86 dir-qemux86_64"
@@ -484,29 +505,18 @@ function show-failed-tasks {
 
     rm -rf $TMPDIR
 
-    echo "PNBLACKLISTs:";
-    for i in openembedded-core/ meta-*; do
-        cd $i;
-        echo "$i:";
-        git grep '^PNBLACKLIST\[.*=' . | tee;
-        cd ..;
-    done | grep -v shr.conf | grep -v documentation.conf;
-    grep ^PNBLACKLIST conf/world_*
+    printf "\n===PNBLACKLISTs count: `show-pnblacklists | grep ':PNBLACKLIST\[' | wc -l`===\n"
 
-    echo "QA issues counts:"
-    for t in already-stripped libdir textrel build-deps file-rdeps version-going-backwards; do
-        count=`cat $qemuarm/qa.log $qemux86/qa.log $qemux86_64/qa.log | sort -u | grep "\[$t\]" | wc -l`;
-        echo "$count   $t:";
-    done;
+    printf "\n===QA issues counts:===\n"
+    printf '{| class='wikitable'\n'
+    printf "!| Count\t	||Issue\n"
+    show-qa-issues | grep "^count: " | sort -h | sed 's/count: /|-\n||/g; s/issue: /||/g'
+    printf "|}\n"
 
     echo; echo;
-    echo "QA issues by type:"
-    for t in already-stripped libdir textrel build-deps file-rdeps version-going-backwards; do
-        count=`cat $qemuarm/qa.log $qemux86/qa.log $qemux86_64/qa.log | sort -u | grep "\[$t\]" | wc -l`;
-        echo "$count   $t:";
-        cat $qemuarm/qa.log $qemux86/qa.log $qemux86_64/qa.log | sort -u | grep "\[$t\]" | sed "s#${BUILD_TOPDIR}/tmp-glibc/#/tmp/#g";
-        echo; echo;
-    done
+
+    show-pnblacklists
+    show-qa-issues
 }
 
 print_timestamp start
