@@ -89,8 +89,8 @@ function run_build {
     export MACHINE=${BUILD_MACHINE}
     LOGDIR=log.world.`date "+%Y%m%d_%H%M%S"`.log
     mkdir ${LOGDIR}
-    rm -rf tmp-glibc/*;
-    mkdir tmp-glibc || echo "tmp-glibc already exists"
+    [ -d tmp-glibc ] rm -rf tmp-glibc/*;
+    [ -d tmp-glibc ] || mkdir tmp-glibc
     mount | grep "${BUILD_TOPDIR}/tmp-glibc type tmpfs" && echo "Some tmp-glibc already has tmpfs mounted, skipping mount" || mount tmp-glibc
     #for T in gcc core-image-sato qt4-x11-free qt4-embedded webkit-gtk webkit-efl shr-image-all world world-image; do
     for T in world; do
