@@ -389,7 +389,9 @@ function run_parse-results {
     if [ "${BUILD_LOG_WORLD_DIRS}" = "LATEST" ] ; then
         BUILD_LOG_WORLD_DIRS=`ls -d log.world.20*.log/ | sort | tail -n 3 | xargs`
     fi
-    show-failed-tasks ${BUILD_LOG_WORLD_DIRS}
+    LOG=log.report.`date "+%Y%m%d_%H%M%S"`.log
+    show-failed-tasks ${BUILD_LOG_WORLD_DIRS} 2>&1 | tee $LOG
+    rsync -avir ${LOG} jenkins@logs.nslu2-linux.org:htdocs/buildlogs/oe/world
 }
 
 function show-failed-tasks {
@@ -463,6 +465,7 @@ function show-failed-tasks {
     printf "\nhttp://www.openembedded.org/wiki/Bitbake_World_Status\n"
 
     printf "\n== Failed tasks `date +%Y-%m-%d` ==\n"
+    printf "\nINFO: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} Complete log available at http://logs.nslu2-linux.org/buildlogs/oe/world/${LOG}\n"
     printf "\n=== common (`test -e $TMPDIR/common && cat $TMPDIR/common | wc -l`) ===\n"; test -e $TMPDIR/common && cat $TMPDIR/common 2>/dev/null
     printf "\n=== common-x86 (`cat $TMPDIR/common-x86 2>/dev/null | wc -l`) ===\n"; cat $TMPDIR/common-x86 2>/dev/null
     for M in $machines; do
