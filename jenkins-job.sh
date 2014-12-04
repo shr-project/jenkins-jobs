@@ -493,7 +493,13 @@ function show-failed-tasks {
         printf "\n=== $M (`cat $TMPDIR/common-$M 2>/dev/null | wc -l`) ===\n"; cat $TMPDIR/common-$M 2>/dev/null
     done
 
-    printf "\n=== Number of failed tasks ===\n"
+    issues_all=0
+    for M in $machines; do
+        issues=`cat $TMPDIR/${M} | wc -l`
+        issues_all=`expr ${issues_all} + ${issues}`
+    done
+
+    printf "\n=== Number of failed tasks (${issues_all}) ===\n"
     printf '{| class='wikitable'\n'
     for M in $machines; do
         log=${root}/$(eval echo "\$${M}")/
@@ -505,9 +511,9 @@ function show-failed-tasks {
 
     rm -rf $TMPDIR
 
-    printf "\n===PNBLACKLISTs count: `show-pnblacklists | grep ':PNBLACKLIST\[' | wc -l`===\n"
+    printf "\n=== PNBLACKLISTs (`show-pnblacklists | grep ':PNBLACKLIST\[' | wc -l`) ===\n"
 
-    printf "\n===QA issues counts:===\n"
+    printf "\n=== QA issues (`show-qa-issues | grep ".*:.*\[.*\]$" | wc -l`) ===\n"
     printf '{| class='wikitable'\n'
     printf "!| Count\t	||Issue\n"
     show-qa-issues | grep "^count: " | sort -h | sed 's/count: /|-\n||/g; s/issue: /||/g'
