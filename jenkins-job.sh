@@ -239,12 +239,6 @@ function run_prepare {
     cat > ${BUILD_TOPDIR}/conf/world_fixes.inc << EOF
 PREFERRED_PROVIDER_udev = "systemd"
 
-PREFERRED_VERSION_chromium = "37.%"
-
-#PREFERRED_VERSION_gupnp = "0.19.3"
-#PREFERRED_VERSION_gssdp = "0.13.2"
-#PREFERRED_VERSION_gupnp-av = "0.11.6"
-
 #mplayer2 needs this
 # PREFERRED_VERSION_libav = "9.13"
 # PREFERRED_VERSION_libpostproc = "0.0.0+git%"
@@ -284,6 +278,7 @@ VIRTUAL-RUNTIME_alsa-state = "fsoaudiod"
 VIRTUAL-RUNTIME_apm = "fso-apm"
 
 require conf/distro/include/qt5-versions.inc
+QT5_VERSION = "5.3.99+5.4.0-rc1+git%"
 
 # for qtwebkit etc
 # see https://bugzilla.yoctoproject.org/show_bug.cgi?id=5013
