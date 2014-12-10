@@ -500,7 +500,7 @@ function show-failed-tasks {
         log=${root}/$(eval echo "\$${M}")/
         log_file=$(eval echo "\$${M}")/bitbake.log
         link=`grep http://errors.yocto $log_file | sed 's@.*http://@http://@g'`
-        printf "|-\n||$M\t||`cat $TMPDIR/${M} | wc -l`\t||$log||$link\n"
+        printf "|-\n|| $M \t|| `cat $TMPDIR/${M} | wc -l`\t || $log || $link\n"
     done
     printf "|}\n"
 
