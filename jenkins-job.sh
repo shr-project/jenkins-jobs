@@ -278,7 +278,7 @@ VIRTUAL-RUNTIME_alsa-state = "fsoaudiod"
 VIRTUAL-RUNTIME_apm = "fso-apm"
 
 require conf/distro/include/qt5-versions.inc
-QT5_VERSION = "5.3.99+5.4.0-rc1+git%"
+QT5_VERSION = "5.4.0+git%"
 
 # for qtwebkit etc
 # see https://bugzilla.yoctoproject.org/show_bug.cgi?id=5013
