@@ -283,7 +283,8 @@ QT5_VERSION = "5.4.0+git%"
 # for qtwebkit etc
 # see https://bugzilla.yoctoproject.org/show_bug.cgi?id=5013
 # DEPENDS_append_pn-qtbase = " mesa"
-PACKAGECONFIG_append_pn-qtbase = " icu gl accessibility"
+# now set with gles2 in meta-webos-ports/meta-luneui/recipes-qt/qt5/qtbase_git.bbappend
+# PACKAGECONFIG_append_pn-qtbase = " icu gl accessibility"
 
 # for webkit-efl
 PACKAGECONFIG_append_pn-harfbuzz = " icu"
