@@ -397,7 +397,7 @@ function show-pnblacklists {
         echo "$i:";
         git grep '^PNBLACKLIST\[.*=' . | tee;
         cd ..;
-    done | grep -v shr.conf | grep -v documentation.conf;
+    done | grep -v shr.conf | grep -v documentation.conf | grep -v luneos-recipe-blacklist-world.inc | grep -v luneos-recipe-blacklist.inc;
     grep ^PNBLACKLIST conf/world_*
 }
 
