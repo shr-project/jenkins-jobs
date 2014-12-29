@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.0.0"
+BUILD_SCRIPT_VERSION="1.1.0"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -71,6 +71,9 @@ function parse_job_name {
         *_workspace-parse-results)
             BUILD_TYPE="parse-results"
             ;;
+        *_workspace-kill-stalled)
+            BUILD_TYPE="kill-stalled"
+            ;;
         *_test-dependencies_*)
             BUILD_TYPE="test-dependencies"
             ;;
@@ -78,6 +81,34 @@ function parse_job_name {
             BUILD_TYPE="build"
             ;;
     esac
+}
+
+function sanity_check_workspace {
+    # BUILD_TOPDIR path should contain BUILD_VERSION, otherwise there is probably incorrect WORKSPACE in jenkins config
+    if ! echo ${BUILD_TOPDIR} | grep -q "/oe/world/" ; then
+        echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} BUILD_TOPDIR: '${BUILD_TOPDIR}' path should contain /oe/world/ directory, is workspace set correctly in jenkins config?"
+        exit 1
+    fi
+    if ps aux | grep "${BUILD_TOPDIR}/bitbake/bin/[b]itbake"; then
+        if [ "${BUILD_TYPE}" = "kill-stalled" ] ; then
+            echo "WARN: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} There is some bitbake process already running from '${BUILD_TOPDIR}', maybe some stalled process from aborted job?"
+        else
+            echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} There is some bitbake process already running from '${BUILD_TOPDIR}', maybe some stalled process from aborted job?"
+            exit 1
+        fi
+    fi
+}
+
+function kill_stalled_bitbake_processes {
+    if ps aux | grep "${BUILD_TOPDIR}/bitbake/bin/[b]itbake" ; then
+        local BITBAKE_PIDS=`ps aux | grep "${BUILD_TOPDIR}/bitbake/bin/[b]itbake" | awk '{print $2}' | xargs`
+        [ -n "${BITBAKE_PIDS}" ] && kill ${BITBAKE_PIDS}
+        sleep 10
+        ps aux | grep "${BUILD_TOPDIR}/bitbake/bin/[b]itbake"
+        local BITBAKE_PIDS=`ps aux | grep "${BUILD_TOPDIR}/bitbake/bin/[b]itbake" | awk '{print $2}' | xargs`
+        [ -n "${BITBAKE_PIDS}" ] && kill -9 ${BITBAKE_PIDS}
+        ps aux | grep "${BUILD_TOPDIR}/bitbake/bin/[b]itbake"
+    fi
 }
 
 function run_build {
@@ -92,6 +123,7 @@ function run_build {
     [ -d tmp-glibc ] && rm -rf tmp-glibc/*;
     [ -d tmp-glibc ] || mkdir tmp-glibc
     mount | grep "${BUILD_TOPDIR}/tmp-glibc type tmpfs" && echo "Some tmp-glibc already has tmpfs mounted, skipping mount" || mount tmp-glibc
+    sanity-check
     #for T in gcc core-image-sato qt4-x11-free qt4-embedded webkit-gtk webkit-efl shr-image-all world world-image; do
     for T in world; do
         time bitbake -k ${T}  2>&1 | tee -a ${LOGDIR}/bitbake.${T}.log || break;
@@ -105,8 +137,7 @@ function run_build {
 
     cat << EOF > sstate-sysroot-cruft-whitelist.txt
 [^/]*/home/builder
-[^/]*/usr/src/kernel/patches
-[^/]*/usr/src/kernel/scripts/.*
+[^/]*/usr/src/kernel/.*
 [^/]*/usr/lib/gdk-pixbuf-2.0/.*/loaders.cache
 [^/]*/etc/sgml/sgml-docbook.cat
 [^/]*/usr/src/kernel/patches
@@ -157,6 +188,31 @@ EOF
     rm -rf tmp-glibc/*;
 
     exit ${RESULT}
+}
+
+function sanity-check {
+    # check that tmpfs is mounted and has enough space
+    if ! mount | grep -q "${BUILD_TOPDIR}/tmp-glibc type tmpfs"; then
+        echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} tmpfs isn't mounted in ${BUILD_TOPDIR}/tmp-glibc"
+        exit 1
+    fi
+    local available_tmpfs=`df -BG ${BUILD_TOPDIR}/tmp-glibc | grep ${BUILD_TOPDIR}/tmp-glibc | awk '{print $4}' | sed 's/G$//g'`
+    if [ "${available_tmpfs}" -lt 15 ] ; then
+        echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} tmpfs mounted in ${BUILD_TOPDIR}/tmp-glibc has less than 15G free"
+        exit 1
+    fi
+    local tmpfs tmpfs_allocated_all=0
+    for tmpfs in `mount | grep "tmp-glibc type tmpfs" | awk '{print $3}'`; do
+        df -BG $tmpfs | grep $tmpfs;
+        local tmpfs_allocated=`df -BG $tmpfs | grep $tmpfs | awk '{print $3}' | sed 's/G$//g'`
+        tmpfs_allocated_all=`expr ${tmpfs_allocated_all} + ${tmpfs_allocated}`
+    done
+    # we have 2 tmpfs mounts with max size 80GB, but only 97GB of RAM, show error when more than 65G is already allocated
+    # in them
+    if [ "${tmpfs_allocated_all}" -gt 65 ] ; then
+        echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} sum of allocated space in tmpfs mounts is more than 65G, clean some builds"
+        exit 1
+    fi
 }
 
 function run_cleanup {
@@ -435,6 +491,8 @@ function show-failed-tasks {
         fi
     done
 
+    DATE=`echo ${qemux86_64} | sed 's/log.world.\(....\)\(..\)\(..\)_.......log/\1-\2-\3/g'`
+
     TMPDIR=`mktemp -d`
     for M in $machines; do
         log=$(eval echo "\$${M}")/bitbake.log
@@ -469,7 +527,7 @@ function show-failed-tasks {
     for M in $machines; do
         printf "||$M\t"
     done
-    printf "\n|-\n||`date +%Y-%m-%d`\t"
+    printf "\n|-\n||${DATE}\t"
     for M in $machines; do
         printf "||`cat $TMPDIR/${M} | wc -l`\t\t"
     done
@@ -481,7 +539,7 @@ function show-failed-tasks {
 
     printf "\nhttp://www.openembedded.org/wiki/Bitbake_World_Status\n"
 
-    printf "\n== Failed tasks `date +%Y-%m-%d` ==\n"
+    printf "\n== Failed tasks `${DATE}` ==\n"
     printf "\nINFO: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} Complete log available at http://logs.nslu2-linux.org/buildlogs/oe/world/${LOG}\n"
     printf "\n=== common (`test -e $TMPDIR/common && cat $TMPDIR/common | wc -l`) ===\n"; test -e $TMPDIR/common && cat $TMPDIR/common 2>/dev/null
     printf "\n=== common-x86 (`cat $TMPDIR/common-x86 2>/dev/null | wc -l`) ===\n"; cat $TMPDIR/common-x86 2>/dev/null
@@ -523,6 +581,7 @@ function show-failed-tasks {
 
 print_timestamp start
 parse_job_name
+sanity_check_workspace
 
 echo "INFO: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} Running: '${BUILD_TYPE}', machine: '${BUILD_MACHINE}', version: '${BUILD_VERSION}'"
 
@@ -541,6 +600,9 @@ case ${BUILD_TYPE} in
         ;;
     build)
         run_build
+        ;;
+    kill-stalled)
+        kill_stalled_bitbake_processes
         ;;
     parse-results)
         run_parse-results
