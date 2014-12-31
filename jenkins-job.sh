@@ -539,7 +539,7 @@ function show-failed-tasks {
 
     printf "\nhttp://www.openembedded.org/wiki/Bitbake_World_Status\n"
 
-    printf "\n== Failed tasks `${DATE}` ==\n"
+    printf "\n== Failed tasks ${DATE} ==\n"
     printf "\nINFO: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} Complete log available at http://logs.nslu2-linux.org/buildlogs/oe/world/${LOG}\n"
     printf "\n=== common (`test -e $TMPDIR/common && cat $TMPDIR/common | wc -l`) ===\n"; test -e $TMPDIR/common && cat $TMPDIR/common 2>/dev/null
     printf "\n=== common-x86 (`cat $TMPDIR/common-x86 2>/dev/null | wc -l`) ===\n"; cat $TMPDIR/common-x86 2>/dev/null
