@@ -491,7 +491,7 @@ function show-failed-tasks {
         fi
     done
 
-    DATE=`echo ${qemux86_64} | sed 's/log.world.\(....\)\(..\)\(..\)_.......log/\1-\2-\3/g'`
+    DATE=`echo ${qemux86_64} | sed 's/^log.world.\(....\)\(..\)\(..\)_.......log.*$/\1-\2-\3/g'`
 
     TMPDIR=`mktemp -d`
     for M in $machines; do
