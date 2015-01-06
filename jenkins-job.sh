@@ -107,7 +107,7 @@ function kill_stalled_bitbake_processes {
         ps aux | grep "${BUILD_TOPDIR}/bitbake/bin/[b]itbake"
         local BITBAKE_PIDS=`ps aux | grep "${BUILD_TOPDIR}/bitbake/bin/[b]itbake" | awk '{print $2}' | xargs`
         [ -n "${BITBAKE_PIDS}" ] && kill -9 ${BITBAKE_PIDS}
-        ps aux | grep "${BUILD_TOPDIR}/bitbake/bin/[b]itbake"
+        ps aux | grep "${BUILD_TOPDIR}/bitbake/bin/[b]itbake" || true
     fi
 }
 
