@@ -333,8 +333,8 @@ VIRTUAL-RUNTIME_alsa-state = "fsoaudiod"
 # to fix apm, fso-apm conflict in shr-image-all
 VIRTUAL-RUNTIME_apm = "fso-apm"
 
-require conf/distro/include/qt5-versions.inc
-QT5_VERSION = "5.4.0+git%"
+# require conf/distro/include/qt5-versions.inc
+# QT5_VERSION = "5.4.0+git%"
 
 # for qtwebkit etc
 # see https://bugzilla.yoctoproject.org/show_bug.cgi?id=5013
