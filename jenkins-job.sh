@@ -440,7 +440,7 @@ function run_test-dependencies {
 }
 
 function run_rsync {
-    cd ${BUILD_TOPDIR}
+    cd ${BUILD_TOPDIR}/..
     rsync -avir --no-links --exclude '*.done' --exclude git2 \
                            --exclude svn --exclude bzr downloads      jenkins@milla.nao:~/htdocs/oe-sources/
 }
