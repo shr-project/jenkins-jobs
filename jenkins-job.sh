@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.1.0"
+BUILD_SCRIPT_VERSION="1.2.0"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -73,6 +73,9 @@ function parse_job_name {
             ;;
         *_workspace-kill-stalled)
             BUILD_TYPE="kill-stalled"
+            ;;
+        *_workspace-rsync)
+            BUILD_TYPE="rsync"
             ;;
         *_test-dependencies_*)
             BUILD_TYPE="test-dependencies"
@@ -436,6 +439,11 @@ function run_test-dependencies {
     exit ${RESULT}
 }
 
+function run_rsync_sources {
+    cd ${BUILD_TOPDIR}
+    rsync -avir --no-links --exclude '*.done' --exclude git2 \
+                           --exclude svn --exclude bzr downloads      jenkins@milla.nao:~/htdocs/oe-sources/
+}
 function run_parse-results {
     cd ${BUILD_TOPDIR}
     if [ -z "${BUILD_LOG_WORLD_DIRS}" ] ; then
@@ -598,6 +606,9 @@ case ${BUILD_TYPE} in
         ;;
     prepare)
         run_prepare
+        ;;
+    rsync)
+        run_rsync
         ;;
     test-dependencies)
         run_test-dependencies
