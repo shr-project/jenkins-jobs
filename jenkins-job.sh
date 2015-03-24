@@ -597,6 +597,11 @@ sanity_check_workspace
 
 echo "INFO: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} Running: '${BUILD_TYPE}', machine: '${BUILD_MACHINE}', version: '${BUILD_VERSION}'"
 
+# restrict it to 10GB to prevent triggering OOM killer on our jenkins server (which can kill some other
+# process instead of the build itself)
+ulimit -v 10485760
+ulimit -m 10485760
+
 case ${BUILD_TYPE} in
     cleanup)
         run_cleanup
