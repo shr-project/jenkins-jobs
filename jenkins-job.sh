@@ -371,7 +371,7 @@ INHERIT += "buildstats buildstats-summary"
 
 # enable thumb for broader test coverage (oe-core autobuilder doesn't have thumb enabled)
 PREFERRED_ARM_INSTRUCTION_SET              ?= "thumb"
-ARM_INSTRUCTION_SET = "${PREFERRED_ARM_INSTRUCTION_SET}"
+ARM_INSTRUCTION_SET = "\${PREFERRED_ARM_INSTRUCTION_SET}"
 EOF
 }
 
