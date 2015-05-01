@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.2.0"
+BUILD_SCRIPT_VERSION="1.3.0"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -297,6 +297,7 @@ function run_prepare {
     echo 'require world_fixes.inc' >> ${BUILD_TOPDIR}/conf/local.conf
     cat > ${BUILD_TOPDIR}/conf/world_fixes.inc << EOF
 PREFERRED_PROVIDER_udev = "systemd"
+PREFERRED_PROVIDER_virtual/fftw = "fftw"
 
 #mplayer2 needs this
 # PREFERRED_VERSION_libav = "9.13"
