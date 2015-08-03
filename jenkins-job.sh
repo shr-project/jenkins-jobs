@@ -345,6 +345,7 @@ VIRTUAL-RUNTIME_apm = "fso-apm"
 # DEPENDS_append_pn-qtbase = " mesa"
 # now set with gles2 in meta-webos-ports/meta-luneui/recipes-qt/qt5/qtbase_git.bbappend
 # PACKAGECONFIG_append_pn-qtbase = " icu gl accessibility"
+PACKAGECONFIG_append_pn-qtbase = " freetype fontconfig"
 
 # for webkit-efl
 PACKAGECONFIG_append_pn-harfbuzz = " icu"
