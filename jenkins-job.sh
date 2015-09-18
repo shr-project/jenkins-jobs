@@ -473,7 +473,7 @@ function show-pnblacklists {
 
 function show-qa-issues {
     echo "QA issues by type:"
-    for t in already-stripped libdir textrel build-deps file-rdeps version-going-backwards; do
+    for t in already-stripped libdir textrel build-deps file-rdeps version-going-backwards host-user-contaminated installed-vs-shipped unknown-configure-option symlink-to-sysroot invalid-pkgconfig pkgname; do
         count=`cat $qemuarm/qa.log $qemux86/qa.log $qemux86_64/qa.log | sort -u | grep "\[$t\]" | wc -l`;
         printf "count: $count\tissue: $t\n";
         cat $qemuarm/qa.log $qemux86/qa.log $qemux86_64/qa.log | sort -u | grep "\[$t\]" | sed "s#${BUILD_TOPDIR}/tmp-glibc/#/tmp/#g";
