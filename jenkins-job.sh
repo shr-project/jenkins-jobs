@@ -530,6 +530,12 @@ function show-failed-tasks {
         fi
     done
 
+    for i in bitbake openembedded-core meta-openembedded meta-qt5 meta-browser meta-webos-ports meta-smartphone; do
+        printf "\n== Tested changes (not included in master yet) - $i ==\n"
+        cd $i;
+        git log --oneline up/master..jansa/master
+        cd ..;
+    done
     printf "\n== Number of issues - stats ==\n"
     printf "{| class='wikitable'\n"
     printf "!|Date\t\t     !!colspan='3'|Failed tasks\t\t\t    !!colspan='3'|QA\n"
