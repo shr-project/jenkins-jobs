@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.3.1"
+BUILD_SCRIPT_VERSION="1.4.0"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -17,6 +17,8 @@ popd > /dev/null
 BUILD_DIR="shr-core"
 BUILD_TOPDIR="${BUILD_WORKSPACE}/${BUILD_DIR}"
 BUILD_TIME_LOG=${BUILD_TOPDIR}/time.txt
+
+BUILD_QA_ISSUES="already-stripped libdir textrel build-deps file-rdeps version-going-backwards host-user-contaminated installed-vs-shipped unknown-configure-option symlink-to-sysroot invalid-pkgconfig pkgname"
 
 function print_timestamp {
     BUILD_TIMESTAMP=`date -u +%s`
@@ -473,7 +475,7 @@ function show-pnblacklists {
 
 function show-qa-issues {
     echo "QA issues by type:"
-    for t in already-stripped libdir textrel build-deps file-rdeps version-going-backwards host-user-contaminated installed-vs-shipped unknown-configure-option symlink-to-sysroot invalid-pkgconfig pkgname; do
+    for t in ${BUILD_QA_ISSUES}; do
         count=`cat $qemuarm/qa.log $qemux86/qa.log $qemux86_64/qa.log | sort -u | grep "\[$t\]" | wc -l`;
         printf "count: $count\tissue: $t\n";
         cat $qemuarm/qa.log $qemux86/qa.log $qemux86_64/qa.log | sort -u | grep "\[$t\]" | sed "s#${BUILD_TOPDIR}/tmp-glibc/#/tmp/#g";
@@ -538,22 +540,23 @@ function show-failed-tasks {
     done
     printf "\n== Number of issues - stats ==\n"
     printf "{| class='wikitable'\n"
-    printf "!|Date\t\t     !!colspan='3'|Failed tasks\t\t\t    !!colspan='3'|QA\n"
+    printf "!|Date\t\t     !!colspan='3'|Failed tasks\t\t\t    !!colspan='`echo "${BUILD_QA_ISSUES}" | wc`'|QA\n"
     printf "|-\n"
     printf "||\t\t"
     for M in $machines; do
         printf "||$M\t"
     done
-    for M in $machines; do
-        printf "||$M\t"
+    for I in ${BUILD_QA_ISSUES}; do
+        printf "||$I\t"
     done
     printf "\n|-\n||${DATE}\t"
     for M in $machines; do
         printf "||`cat $TMPDIR/${M} | wc -l`\t\t"
     done
-    for M in $machines; do
-        log=$(eval echo "\$${M}")/qa.log
-        printf "||`cat ${log} | wc -l`\t\t"
+    for I in ${BUILD_QA_ISSUES}; do
+        printf "||"
+        show-qa-issues | grep "count:.*issue: ${I}" | sed "s/.*count: //g; s/ issue: ${I}//g"
+        printf "\t\t"
     done
     printf "\n|}\n"
 
