@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.4.4"
+BUILD_SCRIPT_VERSION="1.4.5"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -541,7 +541,7 @@ function show-failed-tasks {
     done
     printf "\n== Number of issues - stats ==\n"
     printf "{| class='wikitable'\n"
-    printf "!|Date\t\t     !!colspan='3'|Failed tasks\t\t\t    !!colspan='`echo "${BUILD_QA_ISSUES}" | wc`'|QA\n"
+    printf "!|Date\t\t     !!colspan='3'|Failed tasks\t\t\t    !!colspan='`echo "${BUILD_QA_ISSUES}" | wc -w`'|QA !!Comment\n"
     printf "|-\n"
     printf "||\t\t"
     for M in $machines; do
@@ -550,15 +550,16 @@ function show-failed-tasks {
     for I in ${BUILD_QA_ISSUES}; do
         printf "||$I\t"
     done
-    printf "\n|-\n||${DATE}\t"
+    printf "||\t\n|-\n||${DATE}\t"
     for M in $machines; do
-        printf "||`cat $TMPDIR/${M} | wc -l`\t\t"
+        COUNT=`cat $TMPDIR/${M} | wc -l`
+        printf "||${COUNT}\t"
     done
     for I in ${BUILD_QA_ISSUES}; do
         COUNT=`show-qa-issues | grep "count:.*issue: ${I}" | sed "s/.*count: //g; s/ *issue: ${I} *$//g; s/\n//g"`
-        printf "||${COUNT}\t\t"
+        printf "||${COUNT}\t"
     done
-    printf "\n|}\n"
+    printf "||\t\n|}\n"
 
     printf "\nhttp://www.openembedded.org/wiki/Bitbake_World_Status\n"
 
