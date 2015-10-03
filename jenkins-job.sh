@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.4.3"
+BUILD_SCRIPT_VERSION="1.4.4"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -555,9 +555,8 @@ function show-failed-tasks {
         printf "||`cat $TMPDIR/${M} | wc -l`\t\t"
     done
     for I in ${BUILD_QA_ISSUES}; do
-        printf "||"
-        show-qa-issues | grep "count:.*issue: ${I}" | sed "s/.*count: //g; s/ *issue: ${I} *$//g; s/\n//g"
-        printf "\t\t"
+        COUNT=`show-qa-issues | grep "count:.*issue: ${I}" | sed "s/.*count: //g; s/ *issue: ${I} *$//g; s/\n//g"`
+        printf "||${COUNT}\t\t"
     done
     printf "\n|}\n"
 
