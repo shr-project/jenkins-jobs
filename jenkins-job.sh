@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.4.6"
+BUILD_SCRIPT_VERSION="1.4.7"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -529,7 +529,7 @@ function show-failed-tasks {
     for i in bitbake openembedded-core meta-openembedded meta-qt5 meta-browser meta-webos-ports meta-smartphone; do
         printf "\n== Tested changes (not included in master yet) - $i ==\n"
         cd $i;
-        git remote update up >/dev/null
+        git remote update up >/dev/null 2>/dev/null
         git log --oneline up/master..jansa/master
         cd ..;
     done
