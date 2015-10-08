@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.4.5"
+BUILD_SCRIPT_VERSION="1.4.6"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -300,12 +300,6 @@ function run_prepare {
     cat > ${BUILD_TOPDIR}/conf/world_fixes.inc << EOF
 PREFERRED_PROVIDER_udev = "systemd"
 PREFERRED_PROVIDER_virtual/fftw = "fftw"
-
-#mplayer2 needs this
-# PREFERRED_VERSION_libav = "9.13"
-# PREFERRED_VERSION_libpostproc = "0.0.0+git%"
-# PREFERRED_PROVIDER_libpostproc = "libpostproc"
-PNBLACKLIST[mplayer2] = ""
 
 # use gold
 DISTRO_FEATURES_append = " ld-is-gold"
