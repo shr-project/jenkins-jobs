@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.4.7"
+BUILD_SCRIPT_VERSION="1.5.0"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -129,11 +129,8 @@ function run_build {
     [ -d tmp-glibc ] || mkdir tmp-glibc
     mount | grep "${BUILD_TOPDIR}/tmp-glibc type tmpfs" && echo "Some tmp-glibc already has tmpfs mounted, skipping mount" || mount tmp-glibc
     sanity-check
-    #for T in gcc core-image-sato qt4-x11-free qt4-embedded webkit-gtk webkit-efl shr-image-all world world-image; do
-    for T in world; do
-        time bitbake -k ${T}  2>&1 | tee -a ${LOGDIR}/bitbake.${T}.log || break;
-        RESULT+=${PIPESTATUS[0]}
-    done  2>&1 | tee ${LOGDIR}/bitbake.log;
+    time bitbake -k world  2>&1 | tee -a ${LOGDIR}/bitbake.log || break;
+    RESULT+=${PIPESTATUS[0]}
     cat tmp-glibc/qa.log >> ${LOGDIR}/qa.log || echo "No QA issues";
 
     cp conf/world* ${LOGDIR}
