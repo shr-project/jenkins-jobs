@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.5.0"
+BUILD_SCRIPT_VERSION="1.6.0"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -340,6 +340,9 @@ VIRTUAL-RUNTIME_apm = "fso-apm"
 # PACKAGECONFIG_append_pn-qtbase = " icu gl accessibility"
 PACKAGECONFIG_append_pn-qtbase = " freetype fontconfig"
 
+# currently it fails when wayland is enabled
+PACKAGECONFIG_remove_pn-libsdl2 = "wayland"
+
 # for webkit-efl
 PACKAGECONFIG_append_pn-harfbuzz = " icu"
 
@@ -385,8 +388,8 @@ function run_test-dependencies {
     [ -d tmp-glibc ] || mkdir tmp-glibc
     mount | grep "${BUILD_TOPDIR}/tmp-glibc type tmpfs" && echo "Some tmp-glibc already has tmpfs mounted, skipping mount" || mount tmp-glibc
 
-    [ -f failed-recipes.log ] || ls -d buildhistory/packages/*/* | xargs -n 1 basename | sort -u > failed-recipes.log
-    [ -f failed-recipes.log ] && RECIPES="--recipes=failed-recipes.log"
+    [ -f failed-recipes.${MACHINE} ] || ls -d buildhistory/packages/*/* | xargs -n 1 basename | sort -u > failed-recipes.${MACHINE}
+    [ -f failed-recipes.${MACHINE} ] && RECIPES="--recipes=failed-recipes.${MACHINE}"
 
     # backup full buildhistory and replace it with link to tmpfs
     mv buildhistory buildhistory-all
@@ -412,7 +415,7 @@ function run_test-dependencies {
     [ -d ${LOGDIR}/3_min/failed ] || mkdir -p ${LOGDIR}/3_min/failed
 
     for f in dependency-changes.error.log dependency-changes.warn.log \
-             failed-recipes.log 1_all/complete.log \
+             failed-recipes.${MACHINE} failed-recipes.log 1_all/complete.log \
              1_all/failed-tasks.log 1_all/failed-recipes.log \
              2_max/failed-tasks.log 2_max/failed-recipes.log \
              3_min/failed-tasks.log 3_min/failed-recipes.log; do
