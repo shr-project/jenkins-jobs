@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.6.0"
+BUILD_SCRIPT_VERSION="1.7.0"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -340,9 +340,6 @@ VIRTUAL-RUNTIME_apm = "fso-apm"
 # PACKAGECONFIG_append_pn-qtbase = " icu gl accessibility"
 PACKAGECONFIG_append_pn-qtbase = " freetype fontconfig"
 
-# currently it fails when wayland is enabled
-PACKAGECONFIG_remove_pn-libsdl2 = "wayland"
-
 # for webkit-efl
 PACKAGECONFIG_append_pn-harfbuzz = " icu"
 
@@ -354,6 +351,7 @@ PNBLACKLIST[bigbuckbunny-480p] = "big and doesn't really need to be tested so mu
 PNBLACKLIST[bigbuckbunny-720p] = "big and doesn't really need to be tested so much"
 PNBLACKLIST[bigbuckbunny-720p] = "big and doesn't really need to be tested so much"
 PNBLACKLIST[tearsofsteel-1080p] = "big and doesn't really need to be tested so much"
+PNBLACKLIST[build-appliance-image] = "tries to include whole downloads directory in /home/builder/poky :/"
 
 # enable reporting
 # needs http://patchwork.openembedded.org/patch/68735/
