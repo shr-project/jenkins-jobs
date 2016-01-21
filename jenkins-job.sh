@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.7.0"
+BUILD_SCRIPT_VERSION="1.7.1"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -386,7 +386,7 @@ function run_test-dependencies {
     [ -d tmp-glibc ] || mkdir tmp-glibc
     mount | grep "${BUILD_TOPDIR}/tmp-glibc type tmpfs" && echo "Some tmp-glibc already has tmpfs mounted, skipping mount" || mount tmp-glibc
 
-    [ -f failed-recipes.${MACHINE} ] || ls -d buildhistory/packages/*/* | xargs -n 1 basename | sort -u > failed-recipes.${MACHINE}
+    [ -f failed-recipes.${MACHINE} ] || bitbake-layers show-recipes | grep '^[^ ].*:' | grep -v '^=' | sed 's/:$//g' | sort -u > failed-recipes.${MACHINE}
     [ -f failed-recipes.${MACHINE} ] && RECIPES="--recipes=failed-recipes.${MACHINE}"
 
     # backup full buildhistory and replace it with link to tmpfs
