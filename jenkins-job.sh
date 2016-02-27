@@ -293,6 +293,8 @@ function run_prepare {
     echo 'BUILDHISTORY_PUSH_REPO ?= "origin oe-world"'          >> ${BUILD_TOPDIR}/conf/local.conf
     sed 's/^DISTRO/#DISTRO/g' -i ${BUILD_TOPDIR}/setup-local
 
+    echo 'require conf/distro/include/no-static-libs.inc' >> ${BUILD_TOPDIR}/conf/local.conf
+
     echo 'require world_fixes.inc' >> ${BUILD_TOPDIR}/conf/local.conf
     cat > ${BUILD_TOPDIR}/conf/world_fixes.inc << EOF
 PREFERRED_PROVIDER_udev = "systemd"
