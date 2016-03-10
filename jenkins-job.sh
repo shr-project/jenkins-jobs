@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.7.2"
+BUILD_SCRIPT_VERSION="1.7.3"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -354,6 +354,9 @@ PNBLACKLIST[bigbuckbunny-720p] = "big and doesn't really need to be tested so mu
 PNBLACKLIST[bigbuckbunny-720p] = "big and doesn't really need to be tested so much"
 PNBLACKLIST[tearsofsteel-1080p] = "big and doesn't really need to be tested so much"
 PNBLACKLIST[build-appliance-image] = "tries to include whole downloads directory in /home/builder/poky :/"
+
+PNBLACKLIST[linux-yocto-tiny-kexecboot] = "does weird sh!t breaking other kernels and modules - broken for years"
+PNBLACKLIST[linux-yocto-tiny] = "does weird sh!t breaking other kernels and modules - broken for years"
 
 # enable reporting
 # needs http://patchwork.openembedded.org/patch/68735/
