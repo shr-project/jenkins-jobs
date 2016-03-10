@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.7.1"
+BUILD_SCRIPT_VERSION="1.7.2"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -281,7 +281,7 @@ function run_prepare {
     echo 'BB_GENERATE_MIRROR_TARBALLS = "1"'                  >> ${BUILD_TOPDIR}/conf/local.conf
     if [ ! -d ${BUILD_TOPDIR}/buildhistory/ ] ; then
         cd ${BUILD_TOPDIR}/
-        git clone git@github.com:shr-project/jenkins-buildhistory.git
+        git clone git@github.com:shr-project/jenkins-buildhistory.git buildhistory
         cd buildhistory;
         git checkout -b oe-world origin/oe-world || git checkout -b oe-world
         cd ../..
