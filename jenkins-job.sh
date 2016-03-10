@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.7.3"
+BUILD_SCRIPT_VERSION="1.7.4"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -271,7 +271,7 @@ function run_prepare {
     make update-conffiles 2>&1
 
     cp common/conf/local.conf ${BUILD_TOPDIR}/conf/local.conf
-    sed -i 's/#PARALLEL_MAKE.*/PARALLEL_MAKE = "-j 8"/'          ${BUILD_TOPDIR}/conf/local.conf
+    sed -i 's/#PARALLEL_MAKE.*/PARALLEL_MAKE = "-j 22"/'          ${BUILD_TOPDIR}/conf/local.conf
     sed -i 's/#BB_NUMBER_THREADS.*/BB_NUMBER_THREADS = "3"/'     ${BUILD_TOPDIR}/conf/local.conf
     sed -i 's/# INHERIT += "rm_work"/INHERIT += "rm_work"/'      ${BUILD_TOPDIR}/conf/local.conf
 
