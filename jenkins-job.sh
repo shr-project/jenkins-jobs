@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.7.4"
+BUILD_SCRIPT_VERSION="1.7.5"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -330,13 +330,13 @@ PREFERRED_PROVIDER_virtual/egl ?= "mesa"
 # to fix fsoaudiod, alsa-state conflict in shr-image-all
 VIRTUAL-RUNTIME_alsa-state = "fsoaudiod"
 # to prevent alsa-state being pulled into -dev or -dbg images
-RDEPENDS_${PN}-dev_pn-alsa-state = ""
-RDEPENDS_${PN}-dbg_pn-alsa-state = ""
+RDEPENDS_\${PN}-dev_pn-alsa-state = ""
+RDEPENDS_\${PN}-dbg_pn-alsa-state = ""
 
 # to fix dependency on conflicting x11-common from packagegroup-core-x11
 VIRTUAL-RUNTIME_xserver_common ?= "xserver-common"
-RDEPENDS_${PN}-dev_pn-x11-common = ""
-RDEPENDS_${PN}-dbg_pn-x11-common = ""
+RDEPENDS_\${PN}-dev_pn-x11-common = ""
+RDEPENDS_\${PN}-dbg_pn-x11-common = ""
 
 # to fix apm, fso-apm conflict in shr-image-all
 VIRTUAL-RUNTIME_apm = "fso-apm"
