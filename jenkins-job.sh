@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.0"
+BUILD_SCRIPT_VERSION="1.8.1"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -457,17 +457,21 @@ function run_rsync {
 function run_parse-results {
     cd ${BUILD_TOPDIR}
     if [ -z "${BUILD_LOG_WORLD_DIRS}" ] ; then
-        echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} BUILD_LOG_WORLD_DIRS is empty, it should contain 3 log.world.*.20*.log directories for qemuarm, qemux86, qemux86-64 logs (in this order). Or 'LATEST' to take 3 newest ones."
+        echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} BUILD_LOG_WORLD_DIRS is empty, it should contain 3 log.world.qemu*.20*.log directories for qemuarm, qemux86, qemux86-64 logs (in this order), then log.dependencies.qemuarm.20*, log.dependencies.qemux86.20*, log.signatures.20*. Or 'LATEST' to take 6 newest ones."
         exit 1
     fi
     # first we need to "import" qemux86 and qemux86-64 reports from kwaj
     rsync -avir --delete ../kwaj/shr-core/log.world.qemux86*.20* .
+    rsync -avir --delete ../kwaj/shr-core/log.dependencies.qemux86*.20* .
 
     if [ "${BUILD_LOG_WORLD_DIRS}" = "LATEST" ] ; then
         BUILD_LOG_WORLD_DIRS=""
         for M in qemuarm qemux86 qemux86-64; do
             BUILD_LOG_WORLD_DIRS="${BUILD_LOG_WORLD_DIRS} `ls -d log.world.${M}.20*.log/ | sort | tail -n 1`"
-	done
+        done
+        BUILD_LOG_WORLD_DIRS="${BUILD_LOG_WORLD_DIRS} `ls -d log.dependencies.qemuarm.20*.log/ | sort | tail -n 1`"
+        BUILD_LOG_WORLD_DIRS="${BUILD_LOG_WORLD_DIRS} `ls -d log.dependencies.qemux86.20*.log/ | sort | tail -n 1`"
+        BUILD_LOG_WORLD_DIRS="${BUILD_LOG_WORLD_DIRS} `ls -d log.signatures.20*.log/ | sort | tail -n 1`"
     fi
     LOG=log.report.`date "+%Y%m%d_%H%M%S"`.log
     show-failed-tasks ${BUILD_LOG_WORLD_DIRS} 2>&1 | tee $LOG
@@ -496,8 +500,8 @@ function show-qa-issues {
 }
 
 function show-failed-tasks {
-    if [ $# -ne 3 ] ; then
-        echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} show-failed-tasks needs 3 params: dir-qemuarm dir-qemux86 dir-qemux86_64"
+    if [ $# -ne 6 ] ; then
+        echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} show-failed-tasks needs 6 params: dir-qemuarm dir-qemux86 dir-qemux86_64 dir-dependencies-qemuarm dir-dependencies-qemux86 dir-signatures"
         exit 1
     fi
 
@@ -613,6 +617,37 @@ function show-failed-tasks {
 
     show-pnblacklists
     show-qa-issues
+
+    show-failed-dependencies $4 qemuarm $root
+    show-failed-dependencies $5 qemux86 $root
+    show-failed-signatures $6 $root
+}
+
+function show-failed-dependencies() {
+    printf "\n=== Failed dependencies for $2 ===\n"
+    printf "\nComplete log: $3/$1\n"
+
+    cat $1/test-dependencies.log | grep -A 1000 "^Found differences:" | grep -v "^INFO: Output written in"
+
+    printf "\n=== Recipes failing with maximal dependencies for $2 ===\n"
+    for i in $1/2_max/failed/*; do echo "`basename $i | sed 's/\.log$//g'` -- $3/$i"; done
+
+    printf "\n=== Recipes failing with minimal dependencies for $2 ===\n"
+    for i in $1/3_min/failed/*; do echo "`basename $i | sed 's/\.log$//g'` -- $3/$i"; done
+}
+
+function show-failed-signatures() {
+    printf "\n=== Incorrect PACKAGE_ARCH or sstate signatures ===\n"
+    printf "\nComplete log: $2/$1\n"
+    if grep -q ERROR: $1/signatures.log; then
+        grep "^ERROR:.* issues were found in" $1/signatures.log
+        echo
+        grep "^ERROR:.* errors found in" $1/signatures.log | sed 's#/home.*signatures.qemu#signatures.qemu#g'
+        echo
+        grep "^ERROR:" $1/signatures.log
+    else
+        printf "\nNo issues detected\n"
+    fi
 }
 
 print_timestamp start
