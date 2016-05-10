@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.7.5"
+BUILD_SCRIPT_VERSION="1.8.0"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -123,7 +123,7 @@ function run_build {
     cd ${BUILD_TOPDIR}
     . ./setup-env
     export MACHINE=${BUILD_MACHINE}
-    LOGDIR=log.world.`date "+%Y%m%d_%H%M%S"`.log
+    LOGDIR=log.world.${MACHINE}.`date "+%Y%m%d_%H%M%S"`.log
     mkdir ${LOGDIR}
     [ -d tmp-glibc ] && rm -rf tmp-glibc/*;
     [ -d tmp-glibc ] || mkdir tmp-glibc
@@ -393,7 +393,7 @@ function run_test-dependencies {
     . ./setup-env
 
     export MACHINE=${BUILD_MACHINE}
-    LOGDIR=log.dependencies.`date "+%Y%m%d_%H%M%S"`.log
+    LOGDIR=log.dependencies.${MACHINE}.`date "+%Y%m%d_%H%M%S"`.log
     mkdir ${LOGDIR}
 
     rm -rf tmp-glibc/*;
@@ -457,11 +457,17 @@ function run_rsync {
 function run_parse-results {
     cd ${BUILD_TOPDIR}
     if [ -z "${BUILD_LOG_WORLD_DIRS}" ] ; then
-        echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} BUILD_LOG_WORLD_DIRS is empty, it should contain 3 log.world.20*.log directories for qemuarm, qemux86, qemux86-64 logs (in this order). Or 'LATEST' to take 3 newest ones."
+        echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} BUILD_LOG_WORLD_DIRS is empty, it should contain 3 log.world.*.20*.log directories for qemuarm, qemux86, qemux86-64 logs (in this order). Or 'LATEST' to take 3 newest ones."
         exit 1
     fi
+    # first we need to "import" qemux86 and qemux86-64 reports from kwaj
+    rsync -avir --delete ../kwaj/shr-core/log.world.qemux86*.20* .
+
     if [ "${BUILD_LOG_WORLD_DIRS}" = "LATEST" ] ; then
-        BUILD_LOG_WORLD_DIRS=`ls -d log.world.20*.log/ | sort | tail -n 3 | xargs`
+        BUILD_LOG_WORLD_DIRS=""
+        for M in qemuarm qemux86 qemux86-64; do
+            BUILD_LOG_WORLD_DIRS="${BUILD_LOG_WORLD_DIRS} `ls -d log.world.${M}.20*.log/ | sort | tail -n 1`"
+	done
     fi
     LOG=log.report.`date "+%Y%m%d_%H%M%S"`.log
     show-failed-tasks ${BUILD_LOG_WORLD_DIRS} 2>&1 | tee $LOG
@@ -513,7 +519,7 @@ function show-failed-tasks {
         fi
     done
 
-    DATE=`echo ${qemux86_64} | sed 's/^log.world.\(....\)\(..\)\(..\)_.......log.*$/\1-\2-\3/g'`
+    DATE=`echo ${qemux86_64} | sed 's/^log.world.qemux86-64.\(....\)\(..\)\(..\)_.......log.*$/\1-\2-\3/g'`
 
     TMPDIR=`mktemp -d`
     for M in $machines; do
