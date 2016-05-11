@@ -552,13 +552,6 @@ function show-failed-tasks {
     done
 
     printf "\n==================== REPORT START ================== \n"
-    for i in bitbake openembedded-core meta-openembedded meta-qt5 meta-browser meta-webos-ports meta-smartphone; do
-        printf "\n== Tested changes (not included in master yet) - $i ==\n"
-        cd $i;
-        git remote update up >/dev/null 2>/dev/null
-        git log --oneline up/master..jansa/master
-        cd ..;
-    done
     printf "\n== Number of issues - stats ==\n"
     printf "{| class='wikitable'\n"
     printf "!|Date\t\t     !!colspan='3'|Failed tasks\t\t\t    !!colspan='6'|Failed depencencies\t\t\t !|Signatures\t\t  !!colspan='`echo "${BUILD_QA_ISSUES}" | wc -w`'|QA !!Comment\n"
@@ -648,6 +641,13 @@ function show-failed-tasks {
     echo; echo;
     show-qa-issues
 
+    for i in bitbake openembedded-core meta-openembedded meta-qt5 meta-browser meta-webos-ports meta-smartphone; do
+        printf "\n== Tested changes (not included in master yet) - $i ==\n"
+        cd $i;
+        git remote update up >/dev/null 2>/dev/null
+        git log --oneline up/master..jansa/master
+        cd ..;
+    done
     printf "\n==================== REPORT STOP ================== \n"
 }
 
