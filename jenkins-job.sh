@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.3"
+BUILD_SCRIPT_VERSION="1.8.4"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -638,13 +638,16 @@ function show-failed-tasks {
     printf "|}\n"
 
     echo; echo;
-
-    show-pnblacklists
-    show-qa-issues
-
     show-failed-dependencies ${test_dependencies_qemuarm} qemuarm ${root}
     show-failed-dependencies ${test_dependencies_qemux86} qemux86 ${root}
     show-failed-signatures ${test_signatures} ${root}
+
+    echo; echo;
+    show-pnblacklists
+
+    echo; echo;
+    show-qa-issues
+
     printf "\n==================== REPORT STOP ================== \n"
 }
 
