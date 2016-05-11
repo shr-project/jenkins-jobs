@@ -554,7 +554,7 @@ function show-failed-tasks {
     printf "\n==================== REPORT START ================== \n"
     printf "\n== Number of issues - stats ==\n"
     printf "{| class='wikitable'\n"
-    printf "!|Date\t\t     !!colspan='3'|Failed tasks\t\t\t    !!colspan='6'|Failed depencencies\t\t\t !|Signatures\t\t  !!colspan='`echo "${BUILD_QA_ISSUES}" | wc -w`'|QA !!Comment\n"
+    printf "!|Date\t\t     !!colspan='3'|Failed tasks\t\t\t    !!colspan='6'|Failed depencencies\t\t\t !!|Signatures\t\t  !!colspan='`echo "${BUILD_QA_ISSUES}" | wc -w`'|QA !!Comment\n"
     printf "|-\n"
     printf "||\t\t"
     for M in $machines; do
@@ -562,7 +562,7 @@ function show-failed-tasks {
     done
     printf "||qemuarm||max||min\t"
     printf "||qemux86||max||min\t"
-    printf "|| \t"
+    printf "||all \t"
     for I in ${BUILD_QA_ISSUES}; do
         printf "||$I\t"
     done
@@ -571,21 +571,24 @@ function show-failed-tasks {
         COUNT=`cat $TMPDIR/${M} | wc -l`
         printf "||${COUNT}\t"
     done
-    COUNT=`cat ${test_dependencies_qemuarm}/test-dependencies.log | grep "^ERROR:.* issues were found in" | sed 's/^ERROR: \(.*\) issues were found in/\1/g'`
+    COUNT=`cat ${test_dependencies_qemuarm}/test-dependencies.log | grep "^ERROR:.* issues were found in" | sed 's/^ERROR: \(.*\) issues were found in.*$/\1/g'`
+    [ -z "${COUNT}" ] && COUNT="0"
     printf "||${COUNT}\t"
     COUNT=`ls -1 ${test_dependencies_qemuarm}/2_max/failed/*.log | wc -l`
     printf "||${COUNT}\t"
     COUNT=`ls -1 ${test_dependencies_qemuarm}/3_min/failed/*.log | wc -l`
     printf "||${COUNT}\t"
 
-    COUNT=`cat ${test_dependencies_qemux86}/test-dependencies.log | grep "^ERROR:.* issues were found in" | sed 's/^ERROR: \(.*\) issues were found in/\1/g'`
+    COUNT=`cat ${test_dependencies_qemux86}/test-dependencies.log | grep "^ERROR:.* issues were found in" | sed 's/^ERROR: \(.*\) issues were found in.*$/\1/g'`
+    [ -z "${COUNT}" ] && COUNT="0"
     printf "||${COUNT}\t"
     COUNT=`ls -1 ${test_dependencies_qemux86}/2_max/failed/*.log | wc -l`
     printf "||${COUNT}\t"
     COUNT=`ls -1 ${test_dependencies_qemux86}/3_min/failed/*.log | wc -l`
     printf "||${COUNT}\t"
 
-    COUNT=`cat ${test_signatures}/signatures.log | grep "^ERROR:.* issues were found in" | sed 's/^ERROR: \(.*\) issues were found in/\1/g'`
+    COUNT=`cat ${test_signatures}/signatures.log | grep "^ERROR:.* issues were found in" | sed 's/^ERROR: \(.*\) issues were found in.*$/\1/g'`
+    [ -z "${COUNT}" ] && COUNT="0"
     printf "||${COUNT}\t"
 
     for I in ${BUILD_QA_ISSUES}; do
@@ -652,7 +655,8 @@ function show-failed-tasks {
 }
 
 function show-failed-dependencies() {
-    COUNT=`cat ${1}/test-dependencies.log | grep "^ERROR:.* issues were found in" | sed 's/^ERROR: \(.*\) issues were found in/\1/g'`
+    COUNT=`cat ${1}/test-dependencies.log | grep "^ERROR:.* issues were found in" | sed 's/^ERROR: \(.*\) issues were found in.*$/\1/g'`
+    [ -z "${COUNT}" ] && COUNT="0"
     printf "\n=== Failed dependencies for $2 (${COUNT}) ===\n"
     printf "\nComplete log: $3$1\n"
 
@@ -668,7 +672,8 @@ function show-failed-dependencies() {
 }
 
 function show-failed-signatures() {
-    COUNT=`cat ${1}/signatures.log | grep "^ERROR:.* issues were found in" | sed 's/^ERROR: \(.*\) issues were found in/\1/g'`
+    COUNT=`cat ${1}/signatures.log | grep "^ERROR:.* issues were found in" | sed 's/^ERROR: \(.*\) issues were found in.*$/\1/g'`
+    [ -z "${COUNT}" ] && COUNT="0"
     printf "\n=== Incorrect PACKAGE_ARCH or sstate signatures (${COUNT}) ===\n"
     printf "\nComplete log: $2$1\n"
     if grep -q ERROR: $1/signatures.log; then
