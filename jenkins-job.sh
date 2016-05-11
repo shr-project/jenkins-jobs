@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.1"
+BUILD_SCRIPT_VERSION="1.8.2"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -508,6 +508,9 @@ function show-failed-tasks {
     qemuarm=$1
     qemux86=$2
     qemux86_64=$3
+    test_dependencies_qemuarm=$4
+    test_dependencies_qemux86=$5
+    test_signatures=$6
 
     machines="qemuarm qemux86 qemux86_64"
     root=http://logs.nslu2-linux.org/buildlogs/oe/world/
@@ -557,12 +560,15 @@ function show-failed-tasks {
     done
     printf "\n== Number of issues - stats ==\n"
     printf "{| class='wikitable'\n"
-    printf "!|Date\t\t     !!colspan='3'|Failed tasks\t\t\t    !!colspan='`echo "${BUILD_QA_ISSUES}" | wc -w`'|QA !!Comment\n"
+    printf "!|Date\t\t     !!colspan='3'|Failed tasks\t\t\t    !!colspan='2'|Failed depencencies\t\t\t !|Signatures\t\t  !!colspan='`echo "${BUILD_QA_ISSUES}" | wc -w`'|QA !!Comment\n"
     printf "|-\n"
     printf "||\t\t"
     for M in $machines; do
         printf "||$M\t"
     done
+    printf "||qemuarm\t"
+    printf "||qemux86\t"
+    printf "|| \t"
     for I in ${BUILD_QA_ISSUES}; do
         printf "||$I\t"
     done
@@ -571,6 +577,15 @@ function show-failed-tasks {
         COUNT=`cat $TMPDIR/${M} | wc -l`
         printf "||${COUNT}\t"
     done
+    COUNT=`cat ${test_dependencies_qemuarm}/test-dependencies.log | grep "^ERROR:.* issues were found in" | sed 's/^ERROR: \(.*\) issues were found in/\1/g'`
+    printf "||${COUNT}\t"
+
+    COUNT=`cat ${test_dependencies_qemux86}/test-dependencies.log | grep "^ERROR:.* issues were found in" | sed 's/^ERROR: \(.*\) issues were found in/\1/g'`
+    printf "||${COUNT}\t"
+
+    COUNT=`cat ${test_signatures}/signatures.log | grep "^ERROR:.* issues were found in" | sed 's/^ERROR: \(.*\) issues were found in/\1/g'`
+    printf "||${COUNT}\t"
+
     for I in ${BUILD_QA_ISSUES}; do
         COUNT=`show-qa-issues | grep "count:.*issue: ${I}" | sed "s/.*count: //g; s/ *issue: ${I} *$//g; s/\n//g"`
         printf "||${COUNT}\t"
@@ -618,27 +633,29 @@ function show-failed-tasks {
     show-pnblacklists
     show-qa-issues
 
-    show-failed-dependencies $4 qemuarm $root
-    show-failed-dependencies $5 qemux86 $root
-    show-failed-signatures $6 $root
+    show-failed-dependencies ${test_dependencies_qemuarm} qemuarm ${root}
+    show-failed-dependencies ${test_dependencies_qemux86} qemux86 ${root}
+    show-failed-signatures ${test_signatures} ${root}
 }
 
 function show-failed-dependencies() {
-    printf "\n=== Failed dependencies for $2 ===\n"
-    printf "\nComplete log: $3/$1\n"
+    COUNT=`cat ${1}/test-dependencies.log | grep "^ERROR:.* issues were found in" | sed 's/^ERROR: \(.*\) issues were found in/\1/g'`
+    printf "\n=== Failed dependencies for $2 (${COUNT}) ===\n"
+    printf "\nComplete log: $3$1\n"
 
     cat $1/test-dependencies.log | grep -A 1000 "^Found differences:" | grep -v "^INFO: Output written in"
 
     printf "\n=== Recipes failing with maximal dependencies for $2 ===\n"
-    for i in $1/2_max/failed/*; do echo "`basename $i | sed 's/\.log$//g'` -- $3/$i"; done
+    for i in $1/2_max/failed/*; do echo "`basename $i | sed 's/\.log$//g'` -- $3$i"; done
 
     printf "\n=== Recipes failing with minimal dependencies for $2 ===\n"
-    for i in $1/3_min/failed/*; do echo "`basename $i | sed 's/\.log$//g'` -- $3/$i"; done
+    for i in $1/3_min/failed/*; do echo "`basename $i | sed 's/\.log$//g'` -- $3$i"; done
 }
 
 function show-failed-signatures() {
-    printf "\n=== Incorrect PACKAGE_ARCH or sstate signatures ===\n"
-    printf "\nComplete log: $2/$1\n"
+    COUNT=`cat ${1}/signatures.log | grep "^ERROR:.* issues were found in" | sed 's/^ERROR: \(.*\) issues were found in/\1/g'`
+    printf "\n=== Incorrect PACKAGE_ARCH or sstate signatures (${COUNT}) ===\n"
+    printf "\nComplete log: $2$1\n"
     if grep -q ERROR: $1/signatures.log; then
         grep "^ERROR:.* issues were found in" $1/signatures.log
         echo
