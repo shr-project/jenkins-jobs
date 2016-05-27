@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.7"
+BUILD_SCRIPT_VERSION="1.8.8"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -650,9 +650,9 @@ function show-failed-tasks {
         git remote update up >/dev/null 2>/dev/null
         COUNT=`git log --oneline up/master..jansa/master | wc -l`
         echo "latest upstream commit: "
-        git log --oneline -`expr ${COUNT} + 1` jansa/master | head -n 1
+        git log --oneline --reverse -`expr ${COUNT} + 1` jansa/master | head -n 1
         echo "not included in master yet: "
-        git log --oneline -${COUNT} jansa/master
+        git log --oneline --reverse -${COUNT} jansa/master
         cd ..;
     done
     printf "\n==================== REPORT STOP ================== \n"
