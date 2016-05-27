@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.5"
+BUILD_SCRIPT_VERSION="1.8.6"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -648,7 +648,11 @@ function show-failed-tasks {
         printf "\n== Tested changes (not included in master yet) - $i ==\n"
         cd $i;
         git remote update up >/dev/null 2>/dev/null
-        git log --oneline up/master..jansa/master
+        COUNT=`git log --oneline up/master..jansa/master`
+        echo -n "latest upstream commit: "
+        git log --oneline -`expr $COUNT + 1` jansa/master | head -n 1
+        echo -n "not included in master yet: "
+        git log --oneline -$COUNT jansa/master
         cd ..;
     done
     printf "\n==================== REPORT STOP ================== \n"
@@ -660,7 +664,7 @@ function show-failed-dependencies() {
     printf "\n=== Failed dependencies for $2 (${COUNT}) ===\n"
     printf "\nComplete log: $3$1\n"
 
-    cat $1/test-dependencies.log | grep -A 1000 "^Found differences:" | grep -v "^INFO: Output written in" | sed 's/^/    * /g'
+    cat $1/test-dependencies.log | grep -A 1000 "^Found differences:" | grep -v "^INFO: Output written in" | sed 's/^/    * /g' | sed 's/^    * Found /Found /g'
 
     COUNT=`ls -1 ${1}/2_max/failed/*.log | wc -l`
     printf "\n=== Recipes failing with maximal dependencies for $2 (${COUNT}) ===\n"
