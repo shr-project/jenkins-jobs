@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.4"
+BUILD_SCRIPT_VERSION="1.8.5"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -514,7 +514,7 @@ function show-failed-tasks {
 
     machines="qemuarm qemux86 qemux86_64"
     root=http://logs.nslu2-linux.org/buildlogs/oe/world/
-    prefix="  ${BUILD_TOPDIR}"
+    prefix="  ${BUILD_TOPDIR}/"
 
     for M in $machines; do
         log=$(eval echo "\$${M}")/bitbake.log
@@ -660,15 +660,15 @@ function show-failed-dependencies() {
     printf "\n=== Failed dependencies for $2 (${COUNT}) ===\n"
     printf "\nComplete log: $3$1\n"
 
-    cat $1/test-dependencies.log | grep -A 1000 "^Found differences:" | grep -v "^INFO: Output written in"
+    cat $1/test-dependencies.log | grep -A 1000 "^Found differences:" | grep -v "^INFO: Output written in" | sed 's/^/    * /g'
 
     COUNT=`ls -1 ${1}/2_max/failed/*.log | wc -l`
     printf "\n=== Recipes failing with maximal dependencies for $2 (${COUNT}) ===\n"
-    for i in $1/2_max/failed/*; do echo "`basename $i | sed 's/\.log$//g'` -- $3$i"; done
+    for i in $1/2_max/failed/*; do echo "    * `basename $i | sed 's/\.log$//g'` -- $3$i"; done
 
     COUNT=`ls -1 ${1}/3_min/failed/*.log | wc -l`
     printf "\n=== Recipes failing with minimal dependencies for $2 (${COUNT}) ===\n"
-    for i in $1/3_min/failed/*; do echo "`basename $i | sed 's/\.log$//g'` -- $3$i"; done
+    for i in $1/3_min/failed/*; do echo "    * `basename $i | sed 's/\.log$//g'` -- $3$i"; done
 }
 
 function show-failed-signatures() {
@@ -677,11 +677,11 @@ function show-failed-signatures() {
     printf "\n=== Incorrect PACKAGE_ARCH or sstate signatures (${COUNT}) ===\n"
     printf "\nComplete log: $2$1\n"
     if grep -q ERROR: $1/signatures.log; then
-        grep "^ERROR:.* issues were found in" $1/signatures.log
+        grep "^ERROR:.* issues were found in" $1/signatures.log | sed 's/^/    * /g'
         echo
-        grep "^ERROR:.* errors found in" $1/signatures.log | sed 's#/home.*signatures.qemu#signatures.qemu#g'
+        grep "^ERROR:.* errors found in" $1/signatures.log | sed 's#/home.*signatures.qemu#signatures.qemu#g' | sed 's/^/    * /g'
         echo
-        grep "^ERROR:" $1/signatures.log
+        grep "^ERROR:" $1/signatures.log | sed 's/^/    * /g'
     else
         printf "\nNo issues detected\n"
     fi
