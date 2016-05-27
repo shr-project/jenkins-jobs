@@ -616,8 +616,8 @@ function show-failed-tasks {
     printf "\n=== Number of failed tasks (${issues_all}) ===\n"
     printf '{| class='wikitable'\n'
     for M in $machines; do
-        log=${root}/$(eval echo "\$${M}")/
-        log_file=$(eval echo "\$${M}")/bitbake.log
+        log=${root}$(eval echo "\$${M}")
+        log_file=$(eval echo "\$${M}")bitbake.log
         link=`grep http://errors.yocto $log_file | sed 's@.*http://@http://@g'`
         printf "|-\n|| $M \t|| `cat $TMPDIR/${M} | wc -l`\t || $log || $link\n"
     done
