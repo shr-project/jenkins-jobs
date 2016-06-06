@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.8"
+BUILD_SCRIPT_VERSION="1.8.9"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -121,6 +121,7 @@ function run_build {
 
     make update 2>&1
     cd ${BUILD_TOPDIR}
+    export LC_ALL=en_US.utf8
     . ./setup-env
     export MACHINE=${BUILD_MACHINE}
     LOGDIR=log.world.${MACHINE}.`date "+%Y%m%d_%H%M%S"`.log
