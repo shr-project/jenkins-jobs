@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.9"
+BUILD_SCRIPT_VERSION="1.8.10"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -236,6 +236,7 @@ function run_compare-signatures {
     declare -i RESULT=0
 
     cd ${BUILD_TOPDIR}
+    export LC_ALL=en_US.utf8
     . ./setup-env
 
     LOGDIR=log.signatures.`date "+%Y%m%d_%H%M%S"`.log
@@ -391,6 +392,7 @@ function run_test-dependencies {
 
     make update 2>&1
     cd ${BUILD_TOPDIR}
+    export LC_ALL=en_US.utf8
     . ./setup-env
 
     export MACHINE=${BUILD_MACHINE}
