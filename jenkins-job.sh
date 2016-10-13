@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.10"
+BUILD_SCRIPT_VERSION="1.8.11"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -222,7 +222,10 @@ function run_cleanup {
     if [ -d ${BUILD_TOPDIR} ] ; then
         cd ${BUILD_TOPDIR};
         du -hs sstate-cache
+        echo -n "number of openssl archives: " && find sstate-cache -name \*openssl\*populate_sysroot\*tgz | grep -v python-pyopenssl | grep -v python-native | wc -l
         openembedded-core/scripts/sstate-cache-management.sh --extra-archs=core2-64,i586,armv5te,qemuarm,qemux86,qemux86_64 -L --cache-dir=sstate-cache -d -y || true
+        echo -n "number of openssl archives: " && find sstate-cache -name \*openssl\*populate_sysroot\*tgz | grep -v python-pyopenssl | grep -v python-native | wc -l
+        find sstate-cache -name \*openssl\*populate_sysroot\*tgz | grep -v python-pyopenssl | grep -v python-native
         du -hs sstate-cache
         mkdir old || true
         umount tmp-glibc || true
