@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.11"
+BUILD_SCRIPT_VERSION="1.8.12"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -17,6 +17,9 @@ popd > /dev/null
 BUILD_DIR="shr-core"
 BUILD_TOPDIR="${BUILD_WORKSPACE}/${BUILD_DIR}"
 BUILD_TIME_LOG=${BUILD_TOPDIR}/time.txt
+
+LOG_RSYNC_DIR="jenkins@logs.nslu2-linux.org:htdocs/buildlogs/oe/world/pyro"
+LOG_HTTP_ROOT="http://logs.nslu2-linux.org/buildlogs/oe/world/pyro/"
 
 BUILD_QA_ISSUES="already-stripped libdir textrel build-deps file-rdeps version-going-backwards host-user-contaminated installed-vs-shipped unknown-configure-option symlink-to-sysroot invalid-pkgconfig pkgname"
 
@@ -135,7 +138,7 @@ function run_build {
     cat tmp-glibc/qa.log >> ${LOGDIR}/qa.log || echo "No QA issues";
 
     cp conf/world* ${LOGDIR}
-    rsync -avir ${LOGDIR} jenkins@logs.nslu2-linux.org:htdocs/buildlogs/oe/world
+    rsync -avir ${LOGDIR} ${LOG_RSYNC_DIR}
     cat ${LOGDIR}/qa.log && true
 
     cat << EOF > sstate-sysroot-cruft-whitelist.txt
@@ -253,7 +256,7 @@ function run_compare-signatures {
     OUTPUT=`grep "INFO: Output written in: " ${LOGDIR}/signatures.log | sed 's/INFO: Output written in: //g'`
     ls ${OUTPUT}/signatures.*.*.log >/dev/null 2>/dev/null && cp ${OUTPUT}/signatures.*.*.log ${LOGDIR}/
 
-    rsync -avir ${LOGDIR} jenkins@logs.nslu2-linux.org:htdocs/buildlogs/oe/world
+    rsync -avir ${LOGDIR} ${LOG_RSYNC_DIR}
 
     [ -d sstate-diff ] || mkdir sstate-diff
     mv tmp-glibc/sstate-diff/* sstate-diff
@@ -444,7 +447,7 @@ function run_test-dependencies {
     ls ${OUTPUT}/3_min/failed/*.log >/dev/null 2>/dev/null && cp -l ${OUTPUT}/3_min/failed/*.log ${LOGDIR}/3_min/failed
 
     cp conf/world* ${LOGDIR}
-    rsync -avir ${LOGDIR} jenkins@logs.nslu2-linux.org:htdocs/buildlogs/oe/world
+    rsync -avir ${LOGDIR} ${LOG_RSYNC_DIR}
     [ -s ${LOGDIR}/qa.log ] && cat ${LOGDIR}/qa.log
 
     # wait for pseudo
@@ -481,7 +484,7 @@ function run_parse-results {
     fi
     LOG=log.report.`date "+%Y%m%d_%H%M%S"`.log
     show-failed-tasks ${BUILD_LOG_WORLD_DIRS} 2>&1 | tee $LOG
-    rsync -avir ${LOG} jenkins@logs.nslu2-linux.org:htdocs/buildlogs/oe/world
+    rsync -avir ${LOG} ${LOG_RSYNC_DIR}
 }
 
 function show-pnblacklists {
@@ -519,7 +522,6 @@ function show-failed-tasks {
     test_signatures=$6
 
     machines="qemuarm qemux86 qemux86_64"
-    root=http://logs.nslu2-linux.org/buildlogs/oe/world/
     prefix="  ${BUILD_TOPDIR}/"
 
     for M in $machines; do
@@ -606,7 +608,7 @@ function show-failed-tasks {
     printf "\nhttp://www.openembedded.org/wiki/Bitbake_World_Status\n"
 
     printf "\n== Failed tasks ${DATE} ==\n"
-    printf "\nINFO: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} Complete log available at http://logs.nslu2-linux.org/buildlogs/oe/world/${LOG}\n"
+    printf "\nINFO: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} Complete log available at ${LOG_HTTP_ROOT}${LOG}\n"
     printf "\n=== common (`test -e $TMPDIR/common && cat $TMPDIR/common | wc -l`) ===\n"; test -e $TMPDIR/common && cat $TMPDIR/common 2>/dev/null
     printf "\n=== common-x86 (`cat $TMPDIR/common-x86 2>/dev/null | wc -l`) ===\n"; cat $TMPDIR/common-x86 2>/dev/null
     for M in $machines; do
@@ -622,7 +624,7 @@ function show-failed-tasks {
     printf "\n=== Number of failed tasks (${issues_all}) ===\n"
     printf '{| class='wikitable'\n'
     for M in $machines; do
-        log=${root}$(eval echo "\$${M}")
+        log=${LOG_HTTP_ROOT}$(eval echo "\$${M}")
         log_file=$(eval echo "\$${M}")bitbake.log
         link=`grep http://errors.yocto $log_file | sed 's@.*http://@http://@g'`
         printf "|-\n|| $M \t|| `cat $TMPDIR/${M} | wc -l`\t || $log || $link\n"
@@ -640,9 +642,9 @@ function show-failed-tasks {
     printf "|}\n"
 
     echo; echo;
-    show-failed-dependencies ${test_dependencies_qemuarm} qemuarm ${root}
-    show-failed-dependencies ${test_dependencies_qemux86} qemux86 ${root}
-    show-failed-signatures ${test_signatures} ${root}
+    show-failed-dependencies ${test_dependencies_qemuarm} qemuarm ${LOG_HTTP_ROOT}
+    show-failed-dependencies ${test_dependencies_qemux86} qemux86 ${LOG_HTTP_ROOT}
+    show-failed-signatures ${test_signatures} ${LOG_HTTP_ROOT}
 
     echo; echo;
     show-pnblacklists
