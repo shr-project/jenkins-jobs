@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.13"
+BUILD_SCRIPT_VERSION="1.8.14"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -470,20 +470,17 @@ function run_rsync {
 function run_parse-results {
     cd ${BUILD_TOPDIR}
     if [ -z "${BUILD_LOG_WORLD_DIRS}" ] ; then
-        echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} BUILD_LOG_WORLD_DIRS is empty, it should contain 3 log.world.qemu*.20*.log directories for qemuarm, qemux86, qemux86-64 logs (in this order), then log.dependencies.qemuarm.20*, log.dependencies.qemux86.20*, log.signatures.20*. Or 'LATEST' to take 6 newest ones."
+        echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} BUILD_LOG_WORLD_DIRS is empty, it should contain 3 log.world.qemu*.20*.log directories for qemuarm, qemux86, qemux86-64 logs (in this order), then log.signatures.20*. Or 'LATEST' to take 4 newest ones."
         exit 1
     fi
     # first we need to "import" qemux86 and qemux86-64 reports from kwaj
     rsync -avir --delete ../kwaj/shr-core/log.world.qemux86*.20* .
-    rsync -avir --delete ../kwaj/shr-core/log.dependencies.qemux86*.20* .
 
     if [ "${BUILD_LOG_WORLD_DIRS}" = "LATEST" ] ; then
         BUILD_LOG_WORLD_DIRS=""
         for M in qemuarm qemux86 qemux86-64; do
             BUILD_LOG_WORLD_DIRS="${BUILD_LOG_WORLD_DIRS} `ls -d log.world.${M}.20*.log/ | sort | tail -n 1`"
         done
-        BUILD_LOG_WORLD_DIRS="${BUILD_LOG_WORLD_DIRS} `ls -d log.dependencies.qemuarm.20*.log/ | sort | tail -n 1`"
-        BUILD_LOG_WORLD_DIRS="${BUILD_LOG_WORLD_DIRS} `ls -d log.dependencies.qemux86.20*.log/ | sort | tail -n 1`"
         BUILD_LOG_WORLD_DIRS="${BUILD_LOG_WORLD_DIRS} `ls -d log.signatures.20*.log/ | sort | tail -n 1`"
     fi
     LOG=log.report.`date "+%Y%m%d_%H%M%S"`.log
@@ -514,16 +511,14 @@ function show-qa-issues {
 
 function show-failed-tasks {
     if [ $# -ne 6 ] ; then
-        echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} show-failed-tasks needs 6 params: dir-qemuarm dir-qemux86 dir-qemux86_64 dir-dependencies-qemuarm dir-dependencies-qemux86 dir-signatures"
+        echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} show-failed-tasks needs 6 params: dir-qemuarm dir-qemux86 dir-qemux86_64 dir-signatures"
         exit 1
     fi
 
     qemuarm=$1
     qemux86=$2
     qemux86_64=$3
-    test_dependencies_qemuarm=$4
-    test_dependencies_qemux86=$5
-    test_signatures=$6
+    test_signatures=$4
 
     machines="qemuarm qemux86 qemux86_64"
     prefix="  ${BUILD_TOPDIR}/"
@@ -583,21 +578,8 @@ function show-failed-tasks {
         COUNT=`cat $TMPDIR/${M} | wc -l`
         printf "||${COUNT}\t"
     done
-    COUNT=`cat ${test_dependencies_qemuarm}/test-dependencies.log | grep "^ERROR:.* issues were found in" | sed 's/^ERROR: \(.*\) issues were found in.*$/\1/g'`
-    [ -z "${COUNT}" ] && COUNT="0"
-    printf "||${COUNT}\t"
-    COUNT=`ls -1 ${test_dependencies_qemuarm}/2_max/failed/*.log | wc -l`
-    printf "||${COUNT}\t"
-    COUNT=`ls -1 ${test_dependencies_qemuarm}/3_min/failed/*.log | wc -l`
-    printf "||${COUNT}\t"
-
-    COUNT=`cat ${test_dependencies_qemux86}/test-dependencies.log | grep "^ERROR:.* issues were found in" | sed 's/^ERROR: \(.*\) issues were found in.*$/\1/g'`
-    [ -z "${COUNT}" ] && COUNT="0"
-    printf "||${COUNT}\t"
-    COUNT=`ls -1 ${test_dependencies_qemux86}/2_max/failed/*.log | wc -l`
-    printf "||${COUNT}\t"
-    COUNT=`ls -1 ${test_dependencies_qemux86}/3_min/failed/*.log | wc -l`
-    printf "||${COUNT}\t"
+    # No longer processing dependencies
+    printf "||N/A\t||N/A\t||N/A\t||N/A\t||N/A\t||N/A\t"
 
     COUNT=`cat ${test_signatures}/signatures.log | grep "^ERROR:.* issues were found in" | sed 's/^ERROR: \(.*\) issues were found in.*$/\1/g'`
     [ -z "${COUNT}" ] && COUNT="0"
@@ -646,8 +628,6 @@ function show-failed-tasks {
     printf "|}\n"
 
     echo; echo;
-    show-failed-dependencies ${test_dependencies_qemuarm} qemuarm ${LOG_HTTP_ROOT}
-    show-failed-dependencies ${test_dependencies_qemux86} qemux86 ${LOG_HTTP_ROOT}
     show-failed-signatures ${test_signatures} ${LOG_HTTP_ROOT}
 
     echo; echo;
@@ -668,23 +648,6 @@ function show-failed-tasks {
         cd ..;
     done
     printf "\n==================== REPORT STOP ================== \n"
-}
-
-function show-failed-dependencies() {
-    COUNT=`cat ${1}/test-dependencies.log | grep "^ERROR:.* issues were found in" | sed 's/^ERROR: \(.*\) issues were found in.*$/\1/g'`
-    [ -z "${COUNT}" ] && COUNT="0"
-    printf "\n=== Failed dependencies for $2 (${COUNT}) ===\n"
-    printf "\nComplete log: $3$1\n"
-
-    cat $1/test-dependencies.log | grep -A 1000 "^Found differences:" | grep -v "^INFO: Output written in" | sed 's/^/    * /g' | sed 's/^    \* Found /Found /g'
-
-    COUNT=`ls -1 ${1}/2_max/failed/*.log | wc -l`
-    printf "\n=== Recipes failing with maximal dependencies for $2 (${COUNT}) ===\n"
-    for i in $1/2_max/failed/*; do echo "    * `basename $i | sed 's/\.log$//g'` -- $3$i"; done
-
-    COUNT=`ls -1 ${1}/3_min/failed/*.log | wc -l`
-    printf "\n=== Recipes failing with minimal dependencies for $2 (${COUNT}) ===\n"
-    for i in $1/3_min/failed/*; do echo "    * `basename $i | sed 's/\.log$//g'` -- $3$i"; done
 }
 
 function show-failed-signatures() {
