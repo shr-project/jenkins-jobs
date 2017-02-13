@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.15"
+BUILD_SCRIPT_VERSION="1.8.16"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -336,7 +336,7 @@ PREFERRED_PROVIDER_virtual/libgles2 ?= "mesa"
 PREFERRED_PROVIDER_virtual/egl ?= "mesa"
 
 # to fix fsoaudiod, alsa-state conflict in shr-image-all
-VIRTUAL-RUNTIME_alsa-state = "fsoaudiod"
+VIRTUAL-RUNTIME_alsa-state = ""
 # to prevent alsa-state being pulled into -dev or -dbg images
 RDEPENDS_\${PN}-dev_pn-alsa-state = ""
 RDEPENDS_\${PN}-dbg_pn-alsa-state = ""
