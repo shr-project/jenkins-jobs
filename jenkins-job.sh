@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.16"
+BUILD_SCRIPT_VERSION="1.8.17"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -521,7 +521,6 @@ function show-failed-tasks {
     test_signatures=$4
 
     machines="qemuarm qemux86 qemux86_64"
-    prefix="  ${BUILD_TOPDIR}/"
 
     for M in $machines; do
         log=$(eval echo "\$${M}")/bitbake.log
@@ -538,7 +537,7 @@ function show-failed-tasks {
     TMPDIR=`mktemp -d`
     for M in $machines; do
         log=$(eval echo "\$${M}")/bitbake.log
-        grep "^${prefix}" ${log} | sed "s#^${prefix}##g;" > $TMPDIR/$M
+        grep "^  \(\|\(virtual:[^:]*:\)\)${BUILD_TOPDIR}/" ${log} | sed "s#^  ##g;s#${BUILD_TOPDIR}/##g;" > $TMPDIR/$M
     done
 
     cat $TMPDIR/* | sort -u > $TMPDIR/all
