@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.17"
+BUILD_SCRIPT_VERSION="1.8.18"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -310,6 +310,9 @@ PREFERRED_PROVIDER_virtual/fftw = "fftw"
 
 # use gold
 DISTRO_FEATURES_append = " ld-is-gold"
+
+# use ptest
+DISTRO_FEATURES_append = " ptest"
 
 # use systemd
 DISTRO_FEATURES_append = " systemd"
