@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.20"
+BUILD_SCRIPT_VERSION="1.8.21"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -18,8 +18,8 @@ BUILD_DIR="shr-core"
 BUILD_TOPDIR="${BUILD_WORKSPACE}/${BUILD_DIR}"
 BUILD_TIME_LOG=${BUILD_TOPDIR}/time.txt
 
-LOG_RSYNC_DIR="jenkins@logs.nslu2-linux.org:htdocs/buildlogs/oe/world/pyro"
-LOG_HTTP_ROOT="http://logs.nslu2-linux.org/buildlogs/oe/world/pyro/"
+LOG_RSYNC_DIR="jenkins@logs.nslu2-linux.org:htdocs/buildlogs/oe/world/rocko"
+LOG_HTTP_ROOT="http://logs.nslu2-linux.org/buildlogs/oe/world/rocko/"
 
 BUILD_QA_ISSUES="already-stripped libdir textrel build-deps file-rdeps version-going-backwards host-user-contaminated installed-vs-shipped unknown-configure-option symlink-to-sysroot invalid-pkgconfig pkgname ldflags compile-host-path"
 
@@ -568,7 +568,7 @@ function show-failed-tasks {
     printf "\n==================== REPORT START ================== \n"
     printf "\n== Number of issues - stats ==\n"
     printf "{| class='wikitable'\n"
-    printf "!|Date\t\t     !!colspan='3'|Failed tasks\t\t\t    !!colspan='6'|Failed depencencies\t\t\t !!|Signatures\t\t  !!colspan='`echo "${BUILD_QA_ISSUES}" | wc -w`'|QA !!Comment\n"
+    printf "!|Date\t\t     !!colspan='3'|Failed tasks\t\t\t    !!|Signatures\t\t  !!colspan='`echo "${BUILD_QA_ISSUES}" | wc -w`'|QA !!Comment\n"
     printf "|-\n"
     printf "||\t\t"
     for M in $machines; do
@@ -585,9 +585,6 @@ function show-failed-tasks {
         COUNT=`cat $TMPDIR/${M} | wc -l`
         printf "||${COUNT}\t"
     done
-    # No longer processing dependencies
-    printf "||N/A\t||N/A\t||N/A\t||N/A\t||N/A\t||N/A\t"
-
     COUNT=`cat ${test_signatures}/signatures.log | grep "^ERROR:.* issues were found in" | sed 's/^ERROR: \(.*\) issues were found in.*$/\1/g'`
     [ -z "${COUNT}" ] && COUNT="0"
     printf "||${COUNT}\t"
