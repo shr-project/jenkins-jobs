@@ -566,6 +566,9 @@ function show-failed-tasks {
     done
 
     printf "\n==================== REPORT START ================== \n"
+
+    printf "\nhttp://www.openembedded.org/wiki/Bitbake_World_Status\n"
+
     printf "\n== Number of issues - stats ==\n"
     printf "{| class='wikitable'\n"
     printf "!|Date\t\t     !!colspan='3'|Failed tasks\t\t\t    !!|Signatures\t\t  !!colspan='`echo "${BUILD_QA_ISSUES}" | wc -w`'|QA !!Comment\n"
@@ -574,8 +577,6 @@ function show-failed-tasks {
     for M in $machines; do
         printf "||$M\t"
     done
-    printf "||qemuarm||max||min\t"
-    printf "||qemux86||max||min\t"
     printf "||all \t"
     for I in ${BUILD_QA_ISSUES}; do
         printf "||$I\t"
@@ -595,11 +596,9 @@ function show-failed-tasks {
     done
     printf "||\t\n|}\n"
 
-    printf "\nhttp://www.openembedded.org/wiki/Bitbake_World_Status\n"
-
     printf "\n== Failed tasks ${DATE} ==\n"
     printf "\nINFO: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} Complete log available at ${LOG_HTTP_ROOT}${LOG}\n"
-    printf "\n=== common (`test -e $TMPDIR/common && cat $TMPDIR/common | wc -l`) ===\n"; test -e $TMPDIR/common && cat $TMPDIR/common 2>/dev/null
+    printf "\n=== common (`cat $TMPDIR/common 2>/dev/null | wc -l`) ===\n"; cat $TMPDIR/common 2>/dev/null
     printf "\n=== common-x86 (`cat $TMPDIR/common-x86 2>/dev/null | wc -l`) ===\n"; cat $TMPDIR/common-x86 2>/dev/null
     for M in $machines; do
         printf "\n=== $M (`cat $TMPDIR/common-$M 2>/dev/null | wc -l`) ===\n"; cat $TMPDIR/common-$M 2>/dev/null
