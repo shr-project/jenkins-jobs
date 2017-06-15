@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.22"
+BUILD_SCRIPT_VERSION="1.8.23"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -307,7 +307,7 @@ function run_prepare {
     sed 's/^DISTRO/#DISTRO/g' -i ${BUILD_TOPDIR}/setup-local
 
     echo 'require conf/distro/include/no-static-libs.inc' >> ${BUILD_TOPDIR}/conf/local.conf
-    cat > ${BUILD_TOPDIR}/conf/local.conf << EOF
+    cat >> ${BUILD_TOPDIR}/conf/local.conf << EOF
 # Backport following 9 changes from Yocto 2.4 Rocko and enable reproducible binaries
 # j=1; for i in 139554 139558 139556 139555 139557 139559 139599 139600 139999; do wget https://patchwork.openembedded.org/patch/$i/mbox/ -O pw-am-$j-$i.patch; j=`expr $j + 1`; done
 BUILD_REPRODUCIBLE_BINARIES = "1"
