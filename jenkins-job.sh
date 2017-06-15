@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.22"
+BUILD_SCRIPT_VERSION="1.8.23"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -409,6 +409,9 @@ INHERIT += "buildstats buildstats-summary"
 # enable thumb for broader test coverage (oe-core autobuilder doesn't have thumb enabled)
 PREFERRED_ARM_INSTRUCTION_SET              ?= "thumb"
 ARM_INSTRUCTION_SET = "\${PREFERRED_ARM_INSTRUCTION_SET}"
+
+# downgrade gcc to 6.3 for now
+GCCVERSION = "6.3%"
 EOF
 }
 
