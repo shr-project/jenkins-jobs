@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.23"
+BUILD_SCRIPT_VERSION="1.8.24"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -313,6 +313,16 @@ function run_prepare {
 BUILD_REPRODUCIBLE_BINARIES = "1"
 REPRODUCIBLE_TIMESTAMP_ROOTFS = "1493072213"
 REPRODUCIBLE_TIMESTAMP_IMAGE_PRELINK = "1493072213"
+
+BB_DISKMON_DIRS = "\
+    STOPTASKS,${TMPDIR},1G,100K \
+    STOPTASKS,${DL_DIR},1G,100K \
+    STOPTASKS,${SSTATE_DIR},1G,100K \
+    STOPTASKS,/tmp,100M,100K \
+    ABORT,${TMPDIR},100M,1K \
+    ABORT,${DL_DIR},100M,1K \
+    ABORT,${SSTATE_DIR},100M,1K \
+    ABORT,/tmp,10M,1K"
 EOF
 
     echo 'require world_fixes.inc' >> ${BUILD_TOPDIR}/conf/local.conf
