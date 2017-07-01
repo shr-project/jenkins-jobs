@@ -401,7 +401,6 @@ PNBLACKLIST[bigbuckbunny-720p] = "big and doesn't really need to be tested so mu
 PNBLACKLIST[tearsofsteel-1080p] = "big and doesn't really need to be tested so much"
 PNBLACKLIST[build-appliance-image] = "tries to include whole downloads directory in /home/builder/poky :/"
 
-PNBLACKLIST[linux-yocto-tiny-kexecboot] = "does weird sh!t breaking other kernels and modules - broken for years"
 PNBLACKLIST[linux-yocto-tiny] = "does weird sh!t breaking other kernels and modules - broken for years"
 
 # enable reporting
