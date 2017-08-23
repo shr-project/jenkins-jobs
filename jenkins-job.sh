@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.26"
+BUILD_SCRIPT_VERSION="1.8.27"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -381,9 +381,7 @@ VIRTUAL-RUNTIME_apm = "fso-apm"
 # for qtwebkit etc
 # see https://bugzilla.yoctoproject.org/show_bug.cgi?id=5013
 # DEPENDS_append_pn-qtbase = " mesa"
-# now set with gles2 in meta-webos-ports/meta-luneui/recipes-qt/qt5/qtbase_git.bbappend
-# PACKAGECONFIG_append_pn-qtbase = " icu gl accessibility"
-PACKAGECONFIG_append_pn-qtbase = " freetype fontconfig"
+PACKAGECONFIG_append_pn-qtbase = " icu gl accessibility freetype fontconfig"
 
 # qtwayland doesn't like egl and xcomposite-glx enabled at the same time
 # http://lists.openembedded.org/pipermail/openembedded-devel/2016-December/110444.html
