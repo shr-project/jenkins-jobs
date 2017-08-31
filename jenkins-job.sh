@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.27"
+BUILD_SCRIPT_VERSION="1.8.28"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -145,53 +145,6 @@ function run_build {
     cp conf/world* ${LOGDIR}
     rsync -avir ${LOGDIR} ${LOG_RSYNC_DIR}
     cat ${LOGDIR}/qa.log && true
-
-    cat << EOF > sstate-sysroot-cruft-whitelist.txt
-[^/]*/home/builder
-[^/]*/usr/src/kernel/.*
-[^/]*/usr/lib/gdk-pixbuf-2.0/.*/loaders.cache
-[^/]*/etc/sgml/sgml-docbook.cat
-[^/]*/usr/src/kernel/patches
-[^/]*/etc/sgml/sgml-docbook.cat
-[^/]*/usr/lib/python3.3/__pycache__
-[^/]*/usr/lib/python3.3/[^/]*/__pycache__
-[^/]*/usr/lib/python3.3/[^/]*/[^/]*/__pycache__
-[^/]*/usr/share/dbus
-[^/]*/usr/share/dbus/dbus-bus-introspect.xml
-[^/]*/usr/share/dbus/session.conf
-[^/]*/usr/bin/crossscripts/guile-config
-[^/]*/usr/lib/python2.7/config/libpython2.7.so
-[^/]*/var
-[^/]*/usr/bin/i586-oe-linux-g77
-[^/]*/usr/bin/x86_64-oe-linux-g77
-[^/]*/usr/bin/arm-oe-linux-gnueabi-g77
-[^/]*/usr/lib/php/\.channels.*
-[^/]*/usr/lib/php/\.registry.*
-[^/]*/usr/lib/php/\.depdb.*
-[^/]*/usr/lib/php/\.filemap
-[^/]*/usr/lib/php/\.lock
-[^/]*/usr/lib/gdk-pixbuf-2.0/.*/loaders.cache
-[^/]*/usr/include/ruby-1.9.1/i386-linux
-[^/]*/usr/include/ruby-1.9.1/i386-linux/ruby
-[^/]*/usr/include/ruby-1.9.1/i386-linux/ruby/config.h
-[^/]*/usr/include/ruby-1.9.1/ruby/win32.h
-[^/]*/usr/lib/ruby/i386-linux
-[^/]*/usr/lib/ruby/i386-linux/fake.rb
-[^/]*/usr/lib/ruby/i386-linux/libruby.so.1.9.1
-[^/]*/usr/lib/ruby/i386-linux/libruby-static.a
-[^/]*/usr/lib/ruby/i386-linux/rbconfig.rb
-[^/]*/usr/lib/qt4/plugins
-[^/]*/usr/lib/qt4/plugins/webkit
-[^/]*/usr/lib/qt5/plugins/webkit
-EOF
-
-    mkdir ${LOGDIR}/sysroot-cruft/
-    openembedded-core/scripts/sstate-sysroot-cruft.sh --tmpdir=tmp-glibc --whitelist=sstate-sysroot-cruft-whitelist.txt 2>&1 | tee ${LOGDIR}/sysroot-cruft/sstate-sysroot-cruft.log
-    RESULT+=${PIPESTATUS[0]}
-
-    OUTPUT2=`grep "INFO: Output written in: " ${LOGDIR}/sysroot-cruft/sstate-sysroot-cruft.log | sed 's/INFO: Output written in: //g'`
-    ls   ${OUTPUT2}/diff* ${OUTPUT2}/used.whitelist.txt ${OUTPUT2}/duplicates.txt >/dev/null 2>/dev/null && \
-      cp ${OUTPUT2}/diff* ${OUTPUT2}/used.whitelist.txt ${OUTPUT2}/duplicates.txt ${LOGDIR}/sysroot-cruft/
 
     # wait for pseudo
     sleep 180
