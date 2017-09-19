@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.30"
+BUILD_SCRIPT_VERSION="1.8.31"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -21,7 +21,7 @@ BUILD_TIME_LOG=${BUILD_TOPDIR}/time.txt
 LOG_RSYNC_DIR="jenkins@logs.nslu2-linux.org:htdocs/buildlogs/oe/world/rocko"
 LOG_HTTP_ROOT="http://logs.nslu2-linux.org/buildlogs/oe/world/rocko/"
 
-BUILD_QA_ISSUES="already-stripped libdir textrel build-deps file-rdeps version-going-backwards host-user-contaminated installed-vs-shipped unknown-configure-option symlink-to-sysroot invalid-pkgconfig pkgname ldflags compile-host-path"
+BUILD_QA_ISSUES="already-stripped libdir textrel build-deps file-rdeps version-going-backwards host-user-contaminated installed-vs-shipped unknown-configure-option symlink-to-sysroot invalid-pkgconfig pkgname ldflags compile-host-path qa_pseudo"
 
 function print_timestamp {
     BUILD_TIMESTAMP=`date -u +%s`
