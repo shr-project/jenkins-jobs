@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.29"
+BUILD_SCRIPT_VERSION="1.8.30"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -124,6 +124,7 @@ function run_build {
 
     make update 2>&1
     cd ${BUILD_TOPDIR}
+    show-git-log
     export LC_ALL=en_US.utf8
     . ./setup-env
     export MACHINE=${BUILD_MACHINE}
@@ -609,6 +610,17 @@ function show-failed-tasks {
     echo; echo;
     show-qa-issues
 
+    echo
+    echo "This git log matches with the metadata as seen by qemuarm build."
+    echo "In some cases qemux86 and qemux86-64 builds are built with slightly"
+    echo "different metadata, you can see the exact version near the top of each"
+    echo "log.world.qemu* files linked from the report"
+    show-git-log
+
+    printf "\n==================== REPORT STOP ================== \n"
+}
+
+function show-git-log() {
     for i in bitbake openembedded-core meta-openembedded meta-qt5 meta-browser; do
         printf "\n== Tested changes (not included in master yet) - $i ==\n"
         cd $i;
@@ -620,7 +632,6 @@ function show-failed-tasks {
         git log --oneline --reverse -${COUNT} jansa/master
         cd ..;
     done
-    printf "\n==================== REPORT STOP ================== \n"
 }
 
 function show-failed-signatures() {
