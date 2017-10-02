@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.31"
+BUILD_SCRIPT_VERSION="1.8.32"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -183,16 +183,26 @@ function sanity-check {
 function run_cleanup {
     if [ -d ${BUILD_TOPDIR} ] ; then
         cd ${BUILD_TOPDIR};
-        du -hs sstate-cache
-        echo -n "number of openssl archives: " && find sstate-cache -name \*openssl\*populate_sysroot\*tgz | grep -v python-pyopenssl | grep -v python-native | wc -l
-        openembedded-core/scripts/sstate-cache-management.sh --extra-archs=core2-64,i586,armv5te,qemuarm,qemux86,qemux86_64 -L --cache-dir=sstate-cache -d -y || true
-        echo -n "number of openssl archives: " && find sstate-cache -name \*openssl\*populate_sysroot\*tgz | grep -v python-pyopenssl | grep -v python-native | wc -l
-        find sstate-cache -name \*openssl\*populate_sysroot\*tgz | grep -v python-pyopenssl | grep -v python-native
-        du -hs sstate-cache
+        ARCHS="core2-64,i586,armv5te,qemuarm,qemux86,qemux86_64"
+        DU1=`du -hs sstate-cache`
+        echo "$DU1"
+        OPENSSL="find sstate-cache -name '*:openssl:*populate_sysroot*tgz'"
+        ARCHIVES1=`sh -c "${OPENSSL}"`; echo "number of openssl archives: `echo "$ARCHIVES1" | wc -l`"; echo "$ARCHIVES1"
+        oe-core/scripts/sstate-cache-management.sh -L --cache-dir=sstate-cache -y -d --extra-archs=${ARCHS// /,} || true
+        DU2=`du -hs sstate-cache`
+        echo "$DU2"
+        ARCHIVES2=`sh -c "${OPENSSL}"`; echo "number of openssl archives: `echo "$ARCHIVES2" | wc -l`"; echo "$ARCHIVES2"
+
         mkdir old || true
         umount tmp-glibc || true
         mv -f cache/bb_codeparser.dat* bitbake.lock pseudodone tmp-glibc* old || true
         rm -rf old
+
+        echo "BEFORE:"
+        echo "number of openssl archives: `echo "$ARCHIVES1" | wc -l`"; echo "$ARCHIVES1"
+        echo "AFTER:"
+        echo "number of openssl archives: `echo "$ARCHIVES2" | wc -l`"; echo "$ARCHIVES2"
+        echo "BEFORE: $DU1, AFTER: $DU2"
     fi
     echo "Cleanup finished"
 }
