@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.33"
+BUILD_SCRIPT_VERSION="1.8.34"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -135,10 +135,10 @@ function run_build {
     mount | grep "${BUILD_TOPDIR}/tmp-glibc type tmpfs" && echo "Some tmp-glibc already has tmpfs mounted, skipping mount" || mount tmp-glibc
     sanity-check
     time bitbake -k virtual/kernel  2>&1 | tee -a ${LOGDIR}/bitbake.log || break;
-    if [ "${BUILD_MACHINE}" = "qemux86" -o "${BUILD_MACHINE}" = "qemux86-64" ] ; then
-        time bitbake -k chromium  2>&1 | tee -a ${LOGDIR}/bitbake.log || break;
-        time bitbake -k chromium-wayland  2>&1 | tee -a ${LOGDIR}/bitbake.log || break;
-    fi
+#    if [ "${BUILD_MACHINE}" = "qemux86" -o "${BUILD_MACHINE}" = "qemux86-64" ] ; then
+#        time bitbake -k chromium  2>&1 | tee -a ${LOGDIR}/bitbake.log || break;
+#        time bitbake -k chromium-wayland  2>&1 | tee -a ${LOGDIR}/bitbake.log || break;
+#    fi
     time bitbake -k world  2>&1 | tee -a ${LOGDIR}/bitbake.log || break;
     RESULT+=${PIPESTATUS[0]}
     cat tmp-glibc/qa.log >> ${LOGDIR}/qa.log || echo "No QA issues";
