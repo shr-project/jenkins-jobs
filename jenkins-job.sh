@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.35"
+BUILD_SCRIPT_VERSION="1.8.36"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -48,6 +48,9 @@ function parse_job_name {
         *_qemuarm)
             BUILD_MACHINE="qemuarm"
             ;;
+        *_qemuarm64)
+            BUILD_MACHINE="qemuarm64"
+            ;;
         *_qemux86)
             BUILD_MACHINE="qemux86"
             ;;
@@ -58,7 +61,7 @@ function parse_job_name {
             # global jobs
             ;;
         *)
-            echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} Unrecognized machine in JOB_NAME: '${JOB_NAME}', it should end with '_qemuarm', '_qemux86', '_qemux86-64'"
+            echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} Unrecognized machine in JOB_NAME: '${JOB_NAME}', it should end with '_qemuarm', '_qemuarm64', '_qemux86', '_qemux86-64'"
             exit 1
             ;;
     esac
@@ -183,7 +186,7 @@ function sanity-check {
 function run_cleanup {
     if [ -d ${BUILD_TOPDIR} ] ; then
         cd ${BUILD_TOPDIR};
-        ARCHS="core2-64,i586,armv5te,qemuarm,qemux86,qemux86_64"
+        ARCHS="core2-64,i586,armv5te,qemuarm,qemuarm64,qemux86,qemux86_64"
         DU1=`du -hs sstate-cache`
         echo "$DU1"
         OPENSSL="find sstate-cache -name '*:openssl:*populate_sysroot*tgz'"
@@ -459,7 +462,7 @@ function run_rsync {
 function run_parse-results {
     cd ${BUILD_TOPDIR}
     if [ -z "${BUILD_LOG_WORLD_DIRS}" ] ; then
-        echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} BUILD_LOG_WORLD_DIRS is empty, it should contain 3 log.world.qemu*.20*.log directories for qemuarm, qemux86, qemux86-64 logs (in this order), then log.signatures.20*. Or 'LATEST' to take 4 newest ones."
+        echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} BUILD_LOG_WORLD_DIRS is empty, it should contain 3 log.world.qemu*.20*.log directories for qemuarm, qemuarm64, qemux86, qemux86-64 logs (in this order), then log.signatures.20*. Or 'LATEST' to take 4 newest ones."
         exit 1
     fi
     # first we need to "import" qemux86 and qemux86-64 reports from kwaj
@@ -467,7 +470,7 @@ function run_parse-results {
 
     if [ "${BUILD_LOG_WORLD_DIRS}" = "LATEST" ] ; then
         BUILD_LOG_WORLD_DIRS=""
-        for M in qemuarm qemux86 qemux86-64; do
+        for M in qemuarm qemuarm64 qemux86 qemux86-64; do
             BUILD_LOG_WORLD_DIRS="${BUILD_LOG_WORLD_DIRS} `ls -d log.world.${M}.20*.log/ | sort | tail -n 1`"
         done
         BUILD_LOG_WORLD_DIRS="${BUILD_LOG_WORLD_DIRS} `ls -d log.signatures.20*.log/ | sort | tail -n 1`"
@@ -491,25 +494,26 @@ function show-pnblacklists {
 function show-qa-issues {
     echo "QA issues by type:"
     for t in ${BUILD_QA_ISSUES}; do
-        count=`cat $qemuarm/qa.log $qemux86/qa.log $qemux86_64/qa.log | sort -u | grep "\[$t\]" | wc -l`;
+        count=`cat $qemuarm/qa.log $qemuarm64/qa.log $qemux86/qa.log $qemux86_64/qa.log | sort -u | grep "\[$t\]" | wc -l`;
         printf "count: $count\tissue: $t\n";
-        cat $qemuarm/qa.log $qemux86/qa.log $qemux86_64/qa.log | sort -u | grep "\[$t\]" | sed "s#${BUILD_TOPDIR}/tmp-glibc/#/tmp/#g";
+        cat $qemuarm/qa.log $qemuarm64/qa.log $qemux86/qa.log $qemux86_64/qa.log | sort -u | grep "\[$t\]" | sed "s#${BUILD_TOPDIR}/tmp-glibc/#/tmp/#g";
         echo; echo;
     done
 }
 
 function show-failed-tasks {
     if [ $# -ne 4 ] ; then
-        echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} show-failed-tasks needs 4 params: dir-qemuarm dir-qemux86 dir-qemux86_64 dir-signatures"
+        echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} show-failed-tasks needs 4 params: dir-qemuarm dir-qemuarm64 dir-qemux86 dir-qemux86_64 dir-signatures"
         exit 1
     fi
 
     qemuarm=$1
-    qemux86=$2
-    qemux86_64=$3
-    test_signatures=$4
+    qemuarm64=$2
+    qemux86=$3
+    qemux86_64=$4
+    test_signatures=$5
 
-    machines="qemuarm qemux86 qemux86_64"
+    machines="qemuarm qemuarm64 qemux86 qemux86_64"
 
     for M in $machines; do
         log=$(eval echo "\$${M}")/bitbake.log
@@ -533,12 +537,14 @@ function show-failed-tasks {
 
     cat $TMPDIR/all | while read F; do
         #  echo "^${F}"
-        if grep -q "^${F}" $TMPDIR/qemuarm && grep -q "^${F}" $TMPDIR/qemux86 && grep -q "^${F}" $TMPDIR/qemux86_64 ; then
+        if grep -q "^${F}" $TMPDIR/qemuarm && grep -q "^${F}" $TMPDIR/qemuarm64 && grep -q "^${F}" $TMPDIR/qemux86 && grep -q "^${F}" $TMPDIR/qemux86_64 ; then
             echo "    * $F" >> $TMPDIR/common
         elif grep -q "^${F}" $TMPDIR/qemux86 && grep -q "^${F}" $TMPDIR/qemux86_64 ; then
             echo "    * $F" >> $TMPDIR/common-x86
         elif grep -q "^${F}" $TMPDIR/qemuarm; then
             echo "    * $F" >> $TMPDIR/common-qemuarm
+        elif grep -q "^${F}" $TMPDIR/qemuarm64; then
+            echo "    * $F" >> $TMPDIR/common-qemuarm64
         elif grep -q "^${F}" $TMPDIR/qemux86; then
             echo "    * $F" >> $TMPDIR/common-qemux86
         elif grep -q "^${F}" $TMPDIR/qemux86_64; then
@@ -552,7 +558,7 @@ function show-failed-tasks {
 
     printf "\n== Number of issues - stats ==\n"
     printf "{| class='wikitable'\n"
-    printf "!|Date\t\t     !!colspan='3'|Failed tasks\t\t\t    !!|Signatures\t\t  !!colspan='`echo "${BUILD_QA_ISSUES}" | wc -w`'|QA !!Comment\n"
+    printf "!|Date\t\t     !!colspan='4'|Failed tasks\t\t\t    !!|Signatures\t\t  !!colspan='`echo "${BUILD_QA_ISSUES}" | wc -w`'|QA !!Comment\n"
     printf "|-\n"
     printf "||\t\t"
     for M in $machines; do
