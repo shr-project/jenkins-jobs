@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.37"
+BUILD_SCRIPT_VERSION="1.8.38"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -505,7 +505,7 @@ function show-qa-issues {
 }
 
 function show-failed-tasks {
-    if [ $# -ne 4 ] ; then
+    if [ $# -ne 5 ] ; then
         echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} show-failed-tasks needs 4 params: dir-qemuarm dir-qemuarm64 dir-qemux86 dir-qemux86_64 dir-signatures"
         exit 1
     fi
