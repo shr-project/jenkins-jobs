@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.38"
+BUILD_SCRIPT_VERSION="1.8.39"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -186,7 +186,7 @@ function sanity-check {
 function run_cleanup {
     if [ -d ${BUILD_TOPDIR} ] ; then
         cd ${BUILD_TOPDIR};
-        ARCHS="core2-64,i586,armv5te,qemuarm,qemuarm64,qemux86,qemux86_64"
+        ARCHS="core2-64,i586,armv5te,aarch64,qemuarm,qemuarm64,qemux86,qemux86_64"
         DU1=`du -hs sstate-cache`
         echo "$DU1"
         OPENSSL="find sstate-cache -name '*:openssl:*populate_sysroot*tgz'"
