@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.36"
+BUILD_SCRIPT_VERSION="1.8.37"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -386,6 +386,9 @@ WARN_QA_remove = " ldflags useless-rpaths rpaths staticdev libdir xorg-driver-ab
 # enable thumb for broader test coverage (oe-core autobuilder doesn't have thumb enabled)
 PREFERRED_ARM_INSTRUCTION_SET              ?= "thumb"
 ARM_INSTRUCTION_SET = "\${PREFERRED_ARM_INSTRUCTION_SET}"
+
+# use musl for qemux86
+TCLIBC_qemux86 = "musl"
 EOF
 }
 
