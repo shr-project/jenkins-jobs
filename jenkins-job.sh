@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.40"
+BUILD_SCRIPT_VERSION="1.8.41"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -241,7 +241,7 @@ function run_compare-signatures {
 
 function run_prepare {
     [ -f Makefile ] && echo "Makefile exists (ok)" || wget http://shr.bearstech.com/Makefile
-    sed -i 's#BRANCH_COMMON = .*#BRANCH_COMMON = jansa/master-all#g' Makefile
+    sed -i 's#BRANCH_COMMON = .*#BRANCH_COMMON = akuster/master-all#g' Makefile
 
     make update-common
 
@@ -641,14 +641,19 @@ function show-failed-tasks {
 
 function show-git-log() {
     for i in bitbake openembedded-core meta-openembedded meta-qt5 meta-browser; do
+        if [ "$i" = "meta-openembedded" ] ; then
+            BRANCH=stagging/master-next
+        else
+            BRANCH=jansa/master
+        fi
         printf "\n== Tested changes (not included in master yet) - $i ==\n"
         cd $i;
         git remote update up >/dev/null 2>/dev/null
-        COUNT=`git log --oneline up/master..jansa/master | wc -l`
+        COUNT=`git log --oneline up/master..${BRANCH} | wc -l`
         echo "latest upstream commit: "
-        git log --oneline --reverse -`expr ${COUNT} + 1` jansa/master | head -n 1
+        git log --oneline --reverse -`expr ${COUNT} + 1` ${BRANCH} | head -n 1
         echo "not included in master yet: "
-        git log --oneline --reverse -${COUNT} jansa/master
+        git log --oneline --reverse -${COUNT} ${BRANCH}
         cd ..;
     done
 }
