@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.41"
+BUILD_SCRIPT_VERSION="1.8.42"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -522,7 +522,7 @@ function show-failed-tasks {
         log=$(eval echo "\$${M}")/bitbake.log
         MM=${M/_/-}
         echo $log
-        if ! grep "^MACHINE           = \"${MM}\"" ${log}; then
+        if ! grep "^MACHINE           *= \"${MM}\"" ${log}; then
             echo "ERROR: log $log, isn't for MACHINE ${M}"
             exit 1
         fi
