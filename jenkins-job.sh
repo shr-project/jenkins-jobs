@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.42"
+BUILD_SCRIPT_VERSION="1.8.43"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -133,9 +133,9 @@ function run_build {
     export MACHINE=${BUILD_MACHINE}
     LOGDIR=log.world.${MACHINE}.`date "+%Y%m%d_%H%M%S"`.log
     mkdir ${LOGDIR}
-    [ -d tmp-glibc ] && rm -rf tmp-glibc/*;
-    [ -d tmp-glibc ] || mkdir tmp-glibc
-    mount | grep "${BUILD_TOPDIR}/tmp-glibc type tmpfs" && echo "Some tmp-glibc already has tmpfs mounted, skipping mount" || mount tmp-glibc
+    [ -d tmpfs ] && rm -rf tmpfs/*;
+    [ -d tmpfs ] || mkdir tmpfs
+    mount | grep "${BUILD_TOPDIR}/tmpfs type tmpfs" && echo "Some tmpfs already has tmpfs mounted, skipping mount" || mount tmpfs
     sanity-check
 #    time bitbake -k virtual/kernel  2>&1 | tee -a ${LOGDIR}/bitbake.log || break;
 #    if [ "${BUILD_MACHINE}" = "qemux86" -o "${BUILD_MACHINE}" = "qemux86-64" ] ; then
@@ -144,7 +144,7 @@ function run_build {
 #    fi
     time bitbake -k world  2>&1 | tee -a ${LOGDIR}/bitbake.log || break;
     RESULT+=${PIPESTATUS[0]}
-    cat tmp-glibc/qa.log >> ${LOGDIR}/qa.log || echo "No QA issues";
+    cat tmpfs/qa.log >> ${LOGDIR}/qa.log || echo "No QA issues";
 
     cp conf/world* ${LOGDIR}
     rsync -avir ${LOGDIR} ${LOG_RSYNC_DIR}
@@ -152,25 +152,25 @@ function run_build {
 
     # wait for pseudo
     sleep 180
-    umount tmp-glibc || echo "Umounting tmp-glibc failed"
-    rm -rf tmp-glibc/*;
+    umount tmpfs || echo "Umounting tmpfs failed"
+    rm -rf tmpfs/*;
 
     exit ${RESULT}
 }
 
 function sanity-check {
     # check that tmpfs is mounted and has enough space
-    if ! mount | grep -q "${BUILD_TOPDIR}/tmp-glibc type tmpfs"; then
-        echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} tmpfs isn't mounted in ${BUILD_TOPDIR}/tmp-glibc"
+    if ! mount | grep -q "${BUILD_TOPDIR}/tmpfs type tmpfs"; then
+        echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} tmpfs isn't mounted in ${BUILD_TOPDIR}/tmpfs"
         exit 1
     fi
-    local available_tmpfs=`df -BG ${BUILD_TOPDIR}/tmp-glibc | grep ${BUILD_TOPDIR}/tmp-glibc | awk '{print $4}' | sed 's/G$//g'`
+    local available_tmpfs=`df -BG ${BUILD_TOPDIR}/tmpfs | grep ${BUILD_TOPDIR}/tmpfs | awk '{print $4}' | sed 's/G$//g'`
     if [ "${available_tmpfs}" -lt 15 ] ; then
-        echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} tmpfs mounted in ${BUILD_TOPDIR}/tmp-glibc has less than 15G free"
+        echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} tmpfs mounted in ${BUILD_TOPDIR}/tmpfs has less than 15G free"
         exit 1
     fi
     local tmpfs tmpfs_allocated_all=0
-    for tmpfs in `mount | grep "tmp-glibc type tmpfs" | awk '{print $3}'`; do
+    for tmpfs in `mount | grep "tmpfs type tmpfs" | awk '{print $3}'`; do
         df -BG $tmpfs | grep $tmpfs;
         local tmpfs_allocated=`df -BG $tmpfs | grep $tmpfs | awk '{print $3}' | sed 's/G$//g'`
         tmpfs_allocated_all=`expr ${tmpfs_allocated_all} + ${tmpfs_allocated}`
@@ -197,8 +197,8 @@ function run_cleanup {
         ARCHIVES2=`sh -c "${OPENSSL}"`; echo "number of openssl archives: `echo "$ARCHIVES2" | wc -l`"; echo "$ARCHIVES2"
 
         mkdir old || true
-        umount tmp-glibc || true
-        mv -f cache/bb_codeparser.dat* bitbake.lock pseudodone tmp-glibc* old || true
+        umount tmpfs || true
+        mv -f cache/bb_codeparser.dat* bitbake.lock pseudodone tmpfs* old || true
         rm -rf old
 
         echo "BEFORE:"
@@ -219,10 +219,10 @@ function run_compare-signatures {
 
     LOGDIR=log.signatures.`date "+%Y%m%d_%H%M%S"`.log
     mkdir ${LOGDIR}
-    rm -rf tmp-glibc/*;
-    mount | grep "tmp-glibc type tmpfs" && echo "Some tmp-glibc already has tmpfs mounted, skipping mount" || mount tmp-glibc
+    rm -rf tmpfs/*;
+    mount | grep "tmpfs type tmpfs" && echo "Some tmpfs already has tmpfs mounted, skipping mount" || mount tmpfs
 
-    openembedded-core/scripts/sstate-diff-machines.sh --machines="qemux86copy qemux86 qemuarm" --targets=world --tmpdir=tmp-glibc/ --analyze 2>&1 | tee ${LOGDIR}/signatures.log
+    openembedded-core/scripts/sstate-diff-machines.sh --machines="qemux86copy qemux86 qemuarm" --targets=world --tmpdir=tmpfs/ --analyze 2>&1 | tee ${LOGDIR}/signatures.log
     RESULT+=${PIPESTATUS[0]}
 
     OUTPUT=`grep "INFO: Output written in: " ${LOGDIR}/signatures.log | sed 's/INFO: Output written in: //g'`
@@ -231,10 +231,10 @@ function run_compare-signatures {
     rsync -avir ${LOGDIR} ${LOG_RSYNC_DIR}
 
     [ -d sstate-diff ] || mkdir sstate-diff
-    mv tmp-glibc/sstate-diff/* sstate-diff
+    mv tmpfs/sstate-diff/* sstate-diff
 
-    umount tmp-glibc || echo "Umounting tmp-glibc failed"
-    rm -rf tmp-glibc/*;
+    umount tmpfs || echo "Umounting tmpfs failed"
+    rm -rf tmpfs/*;
 
     exit ${RESULT}
 }
@@ -281,6 +281,9 @@ function run_prepare {
 BUILD_REPRODUCIBLE_BINARIES = "1"
 REPRODUCIBLE_TIMESTAMP_ROOTFS = "1493072213"
 REPRODUCIBLE_TIMESTAMP_IMAGE_PRELINK = "1493072213"
+
+# We want musl and glibc to share the same tmpfs, so instead of appending default "-${TCLIBC}" we append "fs"
+TCLIBCAPPEND = "fs"
 
 BB_DISKMON_DIRS = "\
     STOPTASKS,${TMPDIR},1G,100K \
@@ -404,28 +407,28 @@ function run_test-dependencies {
     LOGDIR=log.dependencies.${MACHINE}.`date "+%Y%m%d_%H%M%S"`.log
     mkdir ${LOGDIR}
 
-    rm -rf tmp-glibc/*;
-    [ -d tmp-glibc ] || mkdir tmp-glibc
-    mount | grep "${BUILD_TOPDIR}/tmp-glibc type tmpfs" && echo "Some tmp-glibc already has tmpfs mounted, skipping mount" || mount tmp-glibc
+    rm -rf tmpfs/*;
+    [ -d tmpfs ] || mkdir tmpfs
+    mount | grep "${BUILD_TOPDIR}/tmpfs type tmpfs" && echo "Some tmpfs already has tmpfs mounted, skipping mount" || mount tmpfs
 
     [ -f failed-recipes.${MACHINE} ] || bitbake-layers show-recipes | grep '^[^ ].*:' | grep -v '^=' | sed 's/:$//g' | sort -u > failed-recipes.${MACHINE}
     [ -f failed-recipes.${MACHINE} ] && RECIPES="--recipes=failed-recipes.${MACHINE}"
 
     # backup full buildhistory and replace it with link to tmpfs
     mv buildhistory buildhistory-all
-    mkdir tmp-glibc/buildhistory
-    ln -s tmp-glibc/buildhistory .
+    mkdir tmpfs/buildhistory
+    ln -s tmpfs/buildhistory .
 
-    rm -f tmp-glibc/qa.log
+    rm -f tmpfs/qa.log
 
-    time openembedded-core/scripts/test-dependencies.sh --tmpdir=tmp-glibc $RECIPES 2>&1 | tee -a ${LOGDIR}/test-dependencies.log
+    time openembedded-core/scripts/test-dependencies.sh --tmpdir=tmpfs $RECIPES 2>&1 | tee -a ${LOGDIR}/test-dependencies.log
     RESULT+=${PIPESTATUS[0]}
 
     # restore full buildhistory
     rm -rf buildhistory
     mv buildhistory-all buildhistory
 
-    cat tmp-glibc/qa.log >> ${LOGDIR}/qa.log 2>/dev/null || echo "No QA issues";
+    cat tmpfs/qa.log >> ${LOGDIR}/qa.log 2>/dev/null || echo "No QA issues";
 
     OUTPUT=`grep "INFO: Output written in: " ${LOGDIR}/test-dependencies.log | sed 's/INFO: Output written in: //g'`
 
@@ -451,8 +454,8 @@ function run_test-dependencies {
 
     # wait for pseudo
     sleep 180
-    umount tmp-glibc || echo "Umounting tmp-glibc failed"
-    rm -rf tmp-glibc/*;
+    umount tmpfs || echo "Umounting tmpfs failed"
+    rm -rf tmpfs/*;
 
     exit ${RESULT}
 }
@@ -499,7 +502,7 @@ function show-qa-issues {
     for t in ${BUILD_QA_ISSUES}; do
         count=`cat $qemuarm/qa.log $qemuarm64/qa.log $qemux86/qa.log $qemux86_64/qa.log | sort -u | grep "\[$t\]" | wc -l`;
         printf "count: $count\tissue: $t\n";
-        cat $qemuarm/qa.log $qemuarm64/qa.log $qemux86/qa.log $qemux86_64/qa.log | sort -u | grep "\[$t\]" | sed "s#${BUILD_TOPDIR}/tmp-glibc/#/tmp/#g";
+        cat $qemuarm/qa.log $qemuarm64/qa.log $qemux86/qa.log $qemux86_64/qa.log | sort -u | grep "\[$t\]" | sed "s#${BUILD_TOPDIR}/tmpfs/#/tmp/#g";
         echo; echo;
     done
 }
