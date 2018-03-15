@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.43"
+BUILD_SCRIPT_VERSION="1.8.44"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -390,8 +390,9 @@ WARN_QA_remove = " ldflags useless-rpaths rpaths staticdev libdir xorg-driver-ab
 PREFERRED_ARM_INSTRUCTION_SET              ?= "thumb"
 ARM_INSTRUCTION_SET = "\${PREFERRED_ARM_INSTRUCTION_SET}"
 
-# use musl for qemux86
+# use musl for qemux86 and qemux86copy
 TCLIBC_qemux86 = "musl"
+TCLIBC_qemux86copy = "musl"
 EOF
 }
 
