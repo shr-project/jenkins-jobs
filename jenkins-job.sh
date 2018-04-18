@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_SCRIPT_VERSION="1.8.44"
+BUILD_SCRIPT_VERSION="1.8.45"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
 # These are used by in following functions, declare them here so that
@@ -276,11 +276,7 @@ function run_prepare {
     echo 'require conf/distro/include/no-static-libs.inc' >> ${BUILD_TOPDIR}/conf/local.conf
     echo 'require conf/distro/include/security_flags.inc' >> ${BUILD_TOPDIR}/conf/local.conf
     cat >> ${BUILD_TOPDIR}/conf/local.conf << EOF
-# Backport following 9 changes from Yocto 2.4 Rocko and enable reproducible binaries
-# j=1; for i in 139554 139558 139556 139555 139557 139559 139599 139600 139999; do wget https://patchwork.openembedded.org/patch/$i/mbox/ -O pw-am-$j-$i.patch; j=`expr $j + 1`; done
-BUILD_REPRODUCIBLE_BINARIES = "1"
-REPRODUCIBLE_TIMESTAMP_ROOTFS = "1493072213"
-REPRODUCIBLE_TIMESTAMP_IMAGE_PRELINK = "1493072213"
+INHERIT += "reproducible_build_simple"
 
 # We want musl and glibc to share the same tmpfs, so instead of appending default "-${TCLIBC}" we append "fs"
 TCLIBCAPPEND = "fs"
