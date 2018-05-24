@@ -14,7 +14,7 @@ pushd `dirname $0` > /dev/null
 BUILD_WORKSPACE=`pwd -P`
 popd > /dev/null
 
-BUILD_DIR="shr-core"
+BUILD_DIR="oe-build"
 BUILD_TOPDIR="${BUILD_WORKSPACE}/${BUILD_DIR}"
 BUILD_TIME_LOG=${BUILD_TOPDIR}/time.txt
 
@@ -22,6 +22,8 @@ LOG_RSYNC_DIR="jenkins@logs.nslu2-linux.org:htdocs/buildlogs/oe/world/sumo"
 LOG_HTTP_ROOT="http://logs.nslu2-linux.org/buildlogs/oe/world/sumo/"
 
 BUILD_QA_ISSUES="already-stripped libdir textrel build-deps file-rdeps version-going-backwards host-user-contaminated installed-vs-shipped unknown-configure-option symlink-to-sysroot invalid-pkgconfig pkgname ldflags compile-host-path qa_pseudo"
+
+TMPFS="${BUILD_TOPDIR}/build/tmpfs"
 
 function print_timestamp {
     BUILD_TIMESTAMP=`date -u +%s`
@@ -100,7 +102,7 @@ function sanity_check_workspace {
         echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} BUILD_TOPDIR: '${BUILD_TOPDIR}' path should contain /oe/world/ directory, is workspace set correctly in jenkins config?"
         exit 1
     fi
-    if ps aux | grep "${BUILD_TOPDIR}/bitbake/bin/[b]itbake"; then
+    if ps aux | grep "[b]itbake"; then
         if [ "${BUILD_TYPE}" = "kill-stalled" ] ; then
             echo "WARN: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} There is some bitbake process already running from '${BUILD_TOPDIR}', maybe some stalled process from aborted job?"
         else
@@ -111,40 +113,47 @@ function sanity_check_workspace {
 }
 
 function kill_stalled_bitbake_processes {
-    if ps aux | grep "${BUILD_TOPDIR}/bitbake/bin/[b]itbake" ; then
-        local BITBAKE_PIDS=`ps aux | grep "${BUILD_TOPDIR}/bitbake/bin/[b]itbake" | awk '{print $2}' | xargs`
+    if ps aux | grep "bitbake/bin/[b]itbake" ; then
+        local BITBAKE_PIDS=`ps aux | grep "bitbake/bin/[b]itbake" | awk '{print $2}' | xargs`
         [ -n "${BITBAKE_PIDS}" ] && kill ${BITBAKE_PIDS}
         sleep 10
-        ps aux | grep "${BUILD_TOPDIR}/bitbake/bin/[b]itbake"
-        local BITBAKE_PIDS=`ps aux | grep "${BUILD_TOPDIR}/bitbake/bin/[b]itbake" | awk '{print $2}' | xargs`
+        ps aux | grep "bitbake/bin/[b]itbake"
+        local BITBAKE_PIDS=`ps aux | grep "bitbake/bin/[b]itbake" | awk '{print $2}' | xargs`
         [ -n "${BITBAKE_PIDS}" ] && kill -9 ${BITBAKE_PIDS}
-        ps aux | grep "${BUILD_TOPDIR}/bitbake/bin/[b]itbake" || true
+        ps aux | grep "bitbake/bin/[b]itbake" || true
     fi
 }
 
 function run_build {
     declare -i RESULT=0
 
-    make update 2>&1
+    cat <<EOF > ${BUILD_TOPDIR}/local.sh
+    export MACHINE=${BUILD_MACHINE}
+
+EOF
     cd ${BUILD_TOPDIR}
+    git pull
+    . ./envsetup.sh
+
+    oe_setup
+
     show-git-log
     export LC_ALL=en_US.utf8
-    . ./setup-env
-    export MACHINE=${BUILD_MACHINE}
     LOGDIR=log.world.${MACHINE}.`date "+%Y%m%d_%H%M%S"`.log
-    mkdir ${LOGDIR}
-    [ -d tmpfs ] && rm -rf tmpfs/*;
-    [ -d tmpfs ] || mkdir tmpfs
-    mount | grep "${BUILD_TOPDIR}/tmpfs type tmpfs" && echo "Some tmpfs already has tmpfs mounted, skipping mount" || mount tmpfs
+    mkdir -p ${LOGDIR}
+    [ -d ${BUILD_TOPDIR}/build/tmpfs ] && rm -rf ${BUILD_TOPDIR}/build/tmpfs/*;
+    [ -d ${BUILD_TOPDIR}/build/tmpfs ] || mkdir -p ${BUILD_TOPDIR}/build/tmpfs
+    mount | grep "build/tmpfs type tmpfs" && echo "Some tmpfs already has tmpfs mounted, skipping mount" || mount ${BUILD_TOPDIR}/build/tmpfs
     sanity-check
 #    time bitbake -k virtual/kernel  2>&1 | tee -a ${LOGDIR}/bitbake.log || break;
 #    if [ "${BUILD_MACHINE}" = "qemux86" -o "${BUILD_MACHINE}" = "qemux86-64" ] ; then
 #        time bitbake -k chromium  2>&1 | tee -a ${LOGDIR}/bitbake.log || break;
 #        time bitbake -k chromium-wayland  2>&1 | tee -a ${LOGDIR}/bitbake.log || break;
 #    fi
+    cd ${BUILD_TOPDIR}
     time bitbake -k world  2>&1 | tee -a ${LOGDIR}/bitbake.log || break;
     RESULT+=${PIPESTATUS[0]}
-    cat tmpfs/qa.log >> ${LOGDIR}/qa.log || echo "No QA issues";
+    cat ${BUILD_TOPDIR}/build/tmpfs/qa.log >> ${LOGDIR}/qa.log || echo "No QA issues";
 
     cp conf/world* ${LOGDIR}
     rsync -avir ${LOGDIR} ${LOG_RSYNC_DIR}
@@ -152,21 +161,21 @@ function run_build {
 
     # wait for pseudo
     sleep 180
-    umount tmpfs || echo "Umounting tmpfs failed"
-    rm -rf tmpfs/*;
+    umount ${BUILD_TOPDIR}/build/tmpfs || echo "Umounting tmpfs failed"
+    rm -rf ${BUILD_TOPDIR}/build/tmpfs/*;
 
     exit ${RESULT}
 }
 
 function sanity-check {
     # check that tmpfs is mounted and has enough space
-    if ! mount | grep -q "${BUILD_TOPDIR}/tmpfs type tmpfs"; then
-        echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} tmpfs isn't mounted in ${BUILD_TOPDIR}/tmpfs"
+    if ! mount | grep -q "build/tmpfs type tmpfs"; then
+        echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} tmpfs isn't mounted in ${BUILD_TOPDIR}/build/tmpfs"
         exit 1
     fi
-    local available_tmpfs=`df -BG ${BUILD_TOPDIR}/tmpfs | grep ${BUILD_TOPDIR}/tmpfs | awk '{print $4}' | sed 's/G$//g'`
-    if [ "${available_tmpfs}" -lt 15 ] ; then
-        echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} tmpfs mounted in ${BUILD_TOPDIR}/tmpfs has less than 15G free"
+    local available_tmpfs=`df -BG ${BUILD_TOPDIR}/build/tmpfs | grep build/tmpfs | awk '{print $4}' | sed 's/G$//g'`
+    if [ ${available_tmpfs} -lt 15 ] ; then
+        echo "ERROR: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} tmpfs mounted in ${BUILD_TOPDIR}/build/tmpfs has less than 15G free"
         exit 1
     fi
     local tmpfs tmpfs_allocated_all=0
@@ -191,14 +200,14 @@ function run_cleanup {
         echo "$DU1"
         OPENSSL="find sstate-cache -name '*:openssl:*populate_sysroot*tgz'"
         ARCHIVES1=`sh -c "${OPENSSL}"`; echo "number of openssl archives: `echo "$ARCHIVES1" | wc -l`"; echo "$ARCHIVES1"
-        openembedded-core/scripts/sstate-cache-management.sh -L --cache-dir=sstate-cache -y -d --extra-archs=${ARCHS// /,} || true
+        sources/openembedded-core/scripts/sstate-cache-management.sh -L --cache-dir=sstate-cache -y -d --extra-archs=${ARCHS// /,} || true
         DU2=`du -hs sstate-cache`
         echo "$DU2"
         ARCHIVES2=`sh -c "${OPENSSL}"`; echo "number of openssl archives: `echo "$ARCHIVES2" | wc -l`"; echo "$ARCHIVES2"
 
-        mkdir old || true
+        mkdir -p old || true
         umount tmpfs || true
-        mv -f cache/bb_codeparser.dat* bitbake.lock pseudodone tmpfs* old || true
+        mv -f cache/bb_codeparser.dat* bitbake.lock pseudodone build/tmpfs* old || true
         rm -rf old
 
         echo "BEFORE:"
@@ -215,14 +224,14 @@ function run_compare-signatures {
 
     cd ${BUILD_TOPDIR}
     export LC_ALL=en_US.utf8
-    . ./setup-env
+    . ./envsetup.sh
 
     LOGDIR=log.signatures.`date "+%Y%m%d_%H%M%S"`.log
-    mkdir ${LOGDIR}
-    rm -rf tmpfs/*;
-    mount | grep "tmpfs type tmpfs" && echo "Some tmpfs already has tmpfs mounted, skipping mount" || mount tmpfs
+    mkdir -p ${LOGDIR}
+    rm -rf ${BUILD_TOPDIR}/build/tmpfs/*;
+    mount | grep "tmpfs type tmpfs" && echo "Some tmpfs already has tmpfs mounted, skipping mount" || mount ${BUILD_TOPDIR}/build/tmpfs
 
-    openembedded-core/scripts/sstate-diff-machines.sh --machines="qemux86copy qemux86 qemuarm" --targets=world --tmpdir=tmpfs/ --analyze 2>&1 | tee ${LOGDIR}/signatures.log
+    sources/openembedded-core/scripts/sstate-diff-machines.sh --machines="qemux86copy qemux86 qemuarm" --targets=world --tmpdir=${BUILD_TOPDIR}/build/tmpfs/ --analyze 2>&1 | tee ${LOGDIR}/signatures.log
     RESULT+=${PIPESTATUS[0]}
 
     OUTPUT=`grep "INFO: Output written in: " ${LOGDIR}/signatures.log | sed 's/INFO: Output written in: //g'`
@@ -230,56 +239,47 @@ function run_compare-signatures {
 
     rsync -avir ${LOGDIR} ${LOG_RSYNC_DIR}
 
-    [ -d sstate-diff ] || mkdir sstate-diff
-    mv tmpfs/sstate-diff/* sstate-diff
+    [ -d sstate-diff ] || mkdir -p sstate-diff
+    mv ${BUILD_TOPDIR}/build/tmpfs/sstate-diff/* sstate-diff
 
-    umount tmpfs || echo "Umounting tmpfs failed"
-    rm -rf tmpfs/*;
+    umount ${BUILD_TOPDIR}/build/tmpfs || echo "Umounting tmpfs failed"
+    rm -rf ${BUILD_TOPDIR}/build/tmpfs/*;
 
     exit ${RESULT}
 }
 
 function run_prepare {
-    [ -f Makefile ] && echo "Makefile exists (ok)" || wget http://shr.bearstech.com/Makefile
-    sed -i 's#BRANCH_COMMON = .*#BRANCH_COMMON = akuster/master-all#g' Makefile
-
-    make update-common
-
-    echo "UPDATE_CONFFILES_ENABLED = 1" > config.mk
-    echo "RESET_ENABLED = 1" >> config.mk
-    [ -d ${BUILD_TOPDIR} ] && echo "${BUILD_DIR} already checked out (ok)" || make setup-shr-core 2>&1
-    make update-conffiles 2>&1
-
-    cp common/conf/local.conf ${BUILD_TOPDIR}/conf/local.conf
-    sed -i 's/#PARALLEL_MAKE.*/PARALLEL_MAKE = "-j 22"/'          ${BUILD_TOPDIR}/conf/local.conf
-    sed -i 's/#BB_NUMBER_THREADS.*/BB_NUMBER_THREADS = "3"/'     ${BUILD_TOPDIR}/conf/local.conf
-    sed -i 's/# INHERIT += "rm_work"/INHERIT += "rm_work"/'      ${BUILD_TOPDIR}/conf/local.conf
-
-    # Reminder to change it later when we have public instance
-    sed -i 's/PRSERV_HOST = "localhost:0"/PRSERV_HOST = "localhost:0"/' ${BUILD_TOPDIR}/conf/local.conf
-
-    echo 'BB_GENERATE_MIRROR_TARBALLS = "1"'                  >> ${BUILD_TOPDIR}/conf/local.conf
-    if [ ! -d ${BUILD_TOPDIR}/buildhistory/ ] ; then
-        cd ${BUILD_TOPDIR}/
+    cd ${BUILD_WORKSPACE}
+    if [ ! -d ${BUILD_TOPDIR}/.git/ ] ; then
+        git clone git://github.com/kraj/oe-build -b oe/staging
+    else
+        git pull
+    fi
+    mkdir -p ${BUILD_TOPDIR}/build
+    if [ ! -d ${BUILD_TOPDIR}/build/buildhistory/ ] ; then
+        cd ${BUILD_TOPDIR}/build
         git clone git@github.com:shr-project/jenkins-buildhistory.git buildhistory
         cd buildhistory;
         git checkout -b oe-world origin/oe-world || git checkout -b oe-world
-        cd ../..
+        cd ${BUILD_WORKSPACE}
     fi
-
-    echo 'BUILDHISTORY_DIR = "${TOPDIR}/buildhistory"'                           >> ${BUILD_TOPDIR}/conf/local.conf
-    echo 'BUILDHISTORY_COMMIT ?= "1"'                                            >> ${BUILD_TOPDIR}/conf/local.conf
-    echo 'BUILDHISTORY_COMMIT_AUTHOR ?= "Martin Jansa <Martin.Jansa@gmail.com>"' >> ${BUILD_TOPDIR}/conf/local.conf
-    echo 'BUILDHISTORY_PUSH_REPO ?= "origin oe-world"'          >> ${BUILD_TOPDIR}/conf/local.conf
-    sed 's/^DISTRO/#DISTRO/g' -i ${BUILD_TOPDIR}/setup-local
-
-    echo 'require conf/distro/include/no-static-libs.inc' >> ${BUILD_TOPDIR}/conf/local.conf
-    echo 'require conf/distro/include/security_flags.inc' >> ${BUILD_TOPDIR}/conf/local.conf
-    cat >> ${BUILD_TOPDIR}/conf/local.conf << EOF
-INHERIT += "reproducible_build_simple"
+    cat <<EOF > ${BUILD_TOPDIR}/conf/auto.conf
 
 # We want musl and glibc to share the same tmpfs, so instead of appending default "-${TCLIBC}" we append "fs"
 TCLIBCAPPEND = "fs"
+
+TMPDIR = "${BUILD_TOPDIR}/build/tmpfs"
+
+PARALLEL_MAKE = "-j 22"
+BB_NUMBER_THREADS = "3"
+INHERIT += "rm_work"
+# Reminder to change it later when we have public instance
+PRSERV_HOST = "localhost:0"
+BB_GENERATE_MIRROR_TARBALLS = "1"
+BUILDHISTORY_COMMIT ?= "1"
+BUILDHISTORY_COMMIT_AUTHOR ?= "Khem Raj <raj.khem@gmail.com>"
+BUILDHISTORY_PUSH_REPO ?= "origin oe-world"
+INHERIT += "reproducible_build_simple"
 
 BB_DISKMON_DIRS = "\
     STOPTASKS,${TMPDIR},1G,100K \
@@ -290,10 +290,9 @@ BB_DISKMON_DIRS = "\
     ABORT,${DL_DIR},100M,1K \
     ABORT,${SSTATE_DIR},100M,1K \
     ABORT,/tmp,10M,1K"
-EOF
 
-    echo 'require world_fixes.inc' >> ${BUILD_TOPDIR}/conf/local.conf
-    cat > ${BUILD_TOPDIR}/conf/world_fixes.inc << EOF
+#require world_fixes.inc
+
 PREFERRED_PROVIDER_udev = "systemd"
 PREFERRED_PROVIDER_virtual/fftw = "fftw"
 
@@ -318,8 +317,6 @@ DISTRO_FEATURES_append = " wayland"
 PREFERRED_PROVIDER_jpeg = "libjpeg-turbo"
 PREFERRED_PROVIDER_jpeg-native = "libjpeg-turbo-native"
 PREFERRED_PROVIDER_gpsd = "gpsd"
-PREFERRED_PROVIDER_e-wm-sysactions = "e-wm"
-ESYSACTIONS = "e-wm-sysactions"
 
 # don't pull libhybris unless explicitly asked for
 PREFERRED_PROVIDER_virtual/libgl ?= "mesa"
@@ -356,7 +353,7 @@ PACKAGECONFIG_remove_pn-qtwayland = "xcomposite-egl xcomposite-glx"
 # for webkit-efl
 PACKAGECONFIG_append_pn-harfbuzz = " icu"
 
-inherit blacklist
+INHERIT += "blacklist"
 # PNBLACKLIST[samsung-rfs-mgr] = "needs newer libsamsung-ipc with negative D_P: Requested 'samsung-ipc-1.0 >= 0.2' but version of libsamsung-ipc is 0.1.0"
 PNBLACKLIST[android-system] = "depends on lxc from meta-virtualiazation which isn't included in my world builds"
 PNBLACKLIST[bigbuckbunny-1080p] = "big and doesn't really need to be tested so much"
@@ -370,8 +367,8 @@ PNBLACKLIST[build-appliance-image] = "tries to include whole downloads directory
 # needs http://patchwork.openembedded.org/patch/68735/
 ERR_REPORT_SERVER = "errors.yoctoproject.org"
 ERR_REPORT_PORT = "80"
-ERR_REPORT_USERNAME = "Martin Jansa"
-ERR_REPORT_EMAIL = "Martin.Jansa@gmail.com"
+ERR_REPORT_USERNAME = "Khem Raj"
+ERR_REPORT_EMAIL = "raj.khem@gmail.com"
 ERR_REPORT_UPLOAD_FAILURES = "1"
 INHERIT += "report-error"
 
@@ -382,10 +379,6 @@ INHERIT += "buildstats buildstats-summary"
 ERROR_QA_append = " ldflags useless-rpaths rpaths staticdev libdir xorg-driver-abi             textrel already-stripped incompatible-license files-invalid             installed-vs-shipped compile-host-path install-host-path             pn-overrides infodir build-deps             unknown-configure-option symlink-to-sysroot multilib             invalid-packageconfig host-user-contaminated uppercase-pn"
 WARN_QA_remove = " ldflags useless-rpaths rpaths staticdev libdir xorg-driver-abi             textrel already-stripped incompatible-license files-invalid             installed-vs-shipped compile-host-path install-host-path             pn-overrides infodir build-deps             unknown-configure-option symlink-to-sysroot multilib             invalid-packageconfig host-user-contaminated uppercase-pn"
 
-# enable thumb for broader test coverage (oe-core autobuilder doesn't have thumb enabled)
-PREFERRED_ARM_INSTRUCTION_SET              ?= "thumb"
-ARM_INSTRUCTION_SET = "\${PREFERRED_ARM_INSTRUCTION_SET}"
-
 # use musl for qemux86 and qemux86copy
 TCLIBC_qemux86 = "musl"
 TCLIBC_qemux86copy = "musl"
@@ -394,43 +387,43 @@ EOF
 
 function run_test-dependencies {
     declare -i RESULT=0
-
-    make update 2>&1
-    cd ${BUILD_TOPDIR}
-    export LC_ALL=en_US.utf8
-    . ./setup-env
-
     export MACHINE=${BUILD_MACHINE}
-    LOGDIR=log.dependencies.${MACHINE}.`date "+%Y%m%d_%H%M%S"`.log
-    mkdir ${LOGDIR}
+    cd ${BUILD_TOPDIR}
+    . ./envsetup.sh
 
-    rm -rf tmpfs/*;
-    [ -d tmpfs ] || mkdir tmpfs
-    mount | grep "${BUILD_TOPDIR}/tmpfs type tmpfs" && echo "Some tmpfs already has tmpfs mounted, skipping mount" || mount tmpfs
+    oe_setup
+    export LC_ALL=en_US.utf8
+
+    LOGDIR=log.dependencies.${MACHINE}.`date "+%Y%m%d_%H%M%S"`.log
+    mkdir -p ${LOGDIR}
+
+    rm -rf ${BUILD_TOPDIR}/build/tmpfs/*;
+    [ -d ${BUILD_TOPDIR}/build/tmpfs ] || mkdir -p ${BUILD_TOPDIR}/build/tmpfs
+    mount | grep "tmpfs type tmpfs" && echo "Some tmpfs already has tmpfs mounted, skipping mount" || mount build/tmpfs
 
     [ -f failed-recipes.${MACHINE} ] || bitbake-layers show-recipes | grep '^[^ ].*:' | grep -v '^=' | sed 's/:$//g' | sort -u > failed-recipes.${MACHINE}
     [ -f failed-recipes.${MACHINE} ] && RECIPES="--recipes=failed-recipes.${MACHINE}"
-
+    pushd build
     # backup full buildhistory and replace it with link to tmpfs
     mv buildhistory buildhistory-all
-    mkdir tmpfs/buildhistory
-    ln -s tmpfs/buildhistory .
+    mkdir -p ${BUILD_TOPDIR}/build/tmpfs/buildhistory
+    ln -s ${BUILD_TOPDIR}/build/tmpfs/buildhistory .
 
-    rm -f tmpfs/qa.log
-
-    time openembedded-core/scripts/test-dependencies.sh --tmpdir=tmpfs $RECIPES 2>&1 | tee -a ${LOGDIR}/test-dependencies.log
+    rm -f ${BUILD_TOPDIR}/build/tmpfs/qa.log
+    time ${BUILD_TOPDIR}/sources/openembedded-core/scripts/test-dependencies.sh --tmpdir=${BUILD_TOPDIR}/build/tmpfs $RECIPES 2>&1 | tee -a ${LOGDIR}/test-dependencies.log
     RESULT+=${PIPESTATUS[0]}
 
     # restore full buildhistory
     rm -rf buildhistory
     mv buildhistory-all buildhistory
 
-    cat tmpfs/qa.log >> ${LOGDIR}/qa.log 2>/dev/null || echo "No QA issues";
+    popd
+    cat ${BUILD_TOPDIR}/build/tmpfs/qa.log >> ${LOGDIR}/qa.log 2>/dev/null || echo "No QA issues";
 
     OUTPUT=`grep "INFO: Output written in: " ${LOGDIR}/test-dependencies.log | sed 's/INFO: Output written in: //g'`
 
     # we want to preserve only partial artifacts
-    [ -d ${LOGDIR}/1_all ] || mkdir -p ${LOGDIR}/1_all
+    [ -d ${LOGDIR}/1_all ] || mkdir  -p ${LOGDIR}/1_all
     [ -d ${LOGDIR}/2_max/failed ] || mkdir -p ${LOGDIR}/2_max/failed
     [ -d ${LOGDIR}/3_min/failed ] || mkdir -p ${LOGDIR}/3_min/failed
 
@@ -451,8 +444,8 @@ function run_test-dependencies {
 
     # wait for pseudo
     sleep 180
-    umount tmpfs || echo "Umounting tmpfs failed"
-    rm -rf tmpfs/*;
+    umount build/tmpfs || echo "Umounting tmpfs failed"
+    rm -rf build/tmpfs/*;
 
     exit ${RESULT}
 }
@@ -469,7 +462,7 @@ function run_parse-results {
         exit 1
     fi
     # first we need to "import" qemux86 and qemux86-64 reports from kwaj
-    rsync -avir --delete ../kwaj/shr-core/log.world.qemux86*.20* .
+    rsync -avir --delete ../kwbuild/log.world.qemux86*.20* .
 
     if [ "${BUILD_LOG_WORLD_DIRS}" = "LATEST" ] ; then
         BUILD_LOG_WORLD_DIRS=""
@@ -499,7 +492,7 @@ function show-qa-issues {
     for t in ${BUILD_QA_ISSUES}; do
         count=`cat $qemuarm/qa.log $qemuarm64/qa.log $qemux86/qa.log $qemux86_64/qa.log | sort -u | grep "\[$t\]" | wc -l`;
         printf "count: $count\tissue: $t\n";
-        cat $qemuarm/qa.log $qemuarm64/qa.log $qemux86/qa.log $qemux86_64/qa.log | sort -u | grep "\[$t\]" | sed "s#${BUILD_TOPDIR}/tmpfs/#/tmp/#g";
+        cat $qemuarm/qa.log $qemuarm64/qa.log $qemux86/qa.log $qemux86_64/qa.log | sort -u | grep "\[$t\]" | sed "s#${BUILD_TOPDIR}/build/tmpfs/#/tmp/#g";
         echo; echo;
     done
 }
@@ -640,22 +633,19 @@ function show-failed-tasks {
 }
 
 function show-git-log() {
+    BRANCH=HEAD
+    pushd ${PWD}
     for i in bitbake openembedded-core meta-openembedded meta-qt5 meta-browser; do
-        if [ "$i" = "meta-openembedded" ] ; then
-            BRANCH=stagging/master-next
-        else
-            BRANCH=jansa/master
-        fi
         printf "\n== Tested changes (not included in master yet) - $i ==\n"
-        cd $i;
-        git remote update up >/dev/null 2>/dev/null
-        COUNT=`git log --oneline up/master..${BRANCH} | wc -l`
+        cd sources/$i;
+        COUNT=`git log --oneline origin/master..${BRANCH} | wc -l`
         echo "latest upstream commit: "
         git log --oneline --reverse -`expr ${COUNT} + 1` ${BRANCH} | head -n 1
         echo "not included in master yet: "
         git log --oneline --reverse -${COUNT} ${BRANCH}
-        cd ..;
+        cd ../..;
     done
+    popd
 }
 
 function show-failed-signatures() {
