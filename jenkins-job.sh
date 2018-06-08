@@ -270,8 +270,8 @@ TCLIBCAPPEND = "fs"
 
 TMPDIR = "${BUILD_TOPDIR}/build/tmpfs"
 
-PARALLEL_MAKE = "-j 22"
-BB_NUMBER_THREADS = "3"
+PARALLEL_MAKE = "-j 8"
+BB_NUMBER_THREADS = "16"
 INHERIT += "rm_work"
 # Reminder to change it later when we have public instance
 PRSERV_HOST = "localhost:0"
