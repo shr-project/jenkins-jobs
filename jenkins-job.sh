@@ -382,6 +382,28 @@ WARN_QA_remove = " ldflags useless-rpaths rpaths staticdev libdir xorg-driver-ab
 # use musl for qemux86 and qemux86copy
 TCLIBC_qemux86 = "musl"
 TCLIBC_qemux86copy = "musl"
+
+# Commericial licenses
+# chromium
+LICENSE_FLAGS_WHITELIST_append = " commercial_ffmpeg commercial_x264 "
+# vlc
+LICENSE_FLAGS_WHITELIST_append = " commercial_mpeg2dec "
+# mpd
+LICENSE_FLAGS_WHITELIST_append = " commercial_mpg123 "
+# libmad
+LICENSE_FLAGS_WHITELIST_append = " commercial_libmad "
+# gstreamer1.0-libav
+LICENSE_FLAGS_WHITELIST_append = " commercial_gstreamer1.0-libav "
+# gstreamer1.0-omx
+LICENSE_FLAGS_WHITELIST_append = " commercial_gstreamer1.0-omx "
+# omapfbplay
+LICENSE_FLAGS_WHITELIST_append = " commercial_lame "
+# libomxil
+LICENSE_FLAGS_WHITELIST_append = " commercial_libomxil "
+# xfce
+LICENSE_FLAGS_WHITELIST_append = " commercial_packagegroup-xfce-multimedia commercial_xfce4-mpc-plugin"
+LICENSE_FLAGS_WHITELIST_append = " commercial_xfmpc commercial_mpd "
+LICENSE_FLAGS_WHITELIST_append = " commercial_mpv "
 EOF
 }
 
@@ -438,7 +460,7 @@ function run_test-dependencies {
     ls ${OUTPUT}/2_max/failed/*.log >/dev/null 2>/dev/null && cp -l ${OUTPUT}/2_max/failed/*.log ${LOGDIR}/2_max/failed
     ls ${OUTPUT}/3_min/failed/*.log >/dev/null 2>/dev/null && cp -l ${OUTPUT}/3_min/failed/*.log ${LOGDIR}/3_min/failed
 
-    cp conf/world* ${LOGDIR}
+    cp conf/auto.conf ${LOGDIR}
     rsync -avir ${LOGDIR} ${LOG_RSYNC_DIR}
     [ -s ${LOGDIR}/qa.log ] && cat ${LOGDIR}/qa.log
 
@@ -484,7 +506,7 @@ function show-pnblacklists {
         git grep '^PNBLACKLIST\[.*=' . | tee;
         cd ..;
     done | grep -v shr.conf | grep -v documentation.conf | grep -v luneos-recipe-blacklist-world.inc | grep -v luneos-recipe-blacklist.inc;
-    grep ^PNBLACKLIST conf/world_*
+    grep ^PNBLACKLIST conf/auto.conf
 }
 
 function show-qa-issues {
