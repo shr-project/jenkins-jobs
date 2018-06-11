@@ -18,8 +18,8 @@ BUILD_DIR="oe-build"
 BUILD_TOPDIR="${BUILD_WORKSPACE}/${BUILD_DIR}"
 BUILD_TIME_LOG=${BUILD_TOPDIR}/time.txt
 
-LOG_RSYNC_DIR="jenkins@logs.nslu2-linux.org:htdocs/buildlogs/oe/world/sumo"
-LOG_HTTP_ROOT="http://logs.nslu2-linux.org/buildlogs/oe/world/sumo/"
+LOG_RSYNC_DIR="jenkins@logs.nslu2-linux.org:htdocs/buildlogs/oe/world/master"
+LOG_HTTP_ROOT="http://logs.nslu2-linux.org/buildlogs/oe/world/master/"
 
 BUILD_QA_ISSUES="already-stripped libdir textrel build-deps file-rdeps version-going-backwards host-user-contaminated installed-vs-shipped unknown-configure-option symlink-to-sysroot invalid-pkgconfig pkgname ldflags compile-host-path qa_pseudo"
 
@@ -155,7 +155,7 @@ EOF
     RESULT+=${PIPESTATUS[0]}
     cat ${BUILD_TOPDIR}/build/tmpfs/qa.log >> ${LOGDIR}/qa.log || echo "No QA issues";
 
-    cp conf/world* ${LOGDIR}
+    cp conf/auto.conf ${LOGDIR}
     rsync -avir ${LOGDIR} ${LOG_RSYNC_DIR}
     cat ${LOGDIR}/qa.log && true
 
@@ -484,7 +484,7 @@ function run_parse-results {
         exit 1
     fi
     # first we need to "import" qemux86 and qemux86-64 reports from kwaj
-    rsync -avir --delete ../kwaj/build/log.world.qemux86*.20* .
+    rsync -avir --delete ../kwaj/oe-build/log.world.qemux86*.20* .
 
     if [ "${BUILD_LOG_WORLD_DIRS}" = "LATEST" ] ; then
         BUILD_LOG_WORLD_DIRS=""
@@ -499,13 +499,14 @@ function run_parse-results {
 }
 
 function show-pnblacklists {
+    cd ${BUILD_TOPDIR}
     echo "PNBLACKLISTs:";
     for i in openembedded-core/ meta-*; do
-        cd $i;
+        cd sources/$i;
         echo "$i:";
         git grep '^PNBLACKLIST\[.*=' . | tee;
-        cd ..;
-    done | grep -v shr.conf | grep -v documentation.conf | grep -v luneos-recipe-blacklist-world.inc | grep -v luneos-recipe-blacklist.inc;
+        cd ../..;
+    done | grep -v bec.conf | grep -v documentation.conf;
     grep ^PNBLACKLIST conf/auto.conf
 }
 
