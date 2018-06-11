@@ -484,7 +484,7 @@ function run_parse-results {
         exit 1
     fi
     # first we need to "import" qemux86 and qemux86-64 reports from kwaj
-    rsync -avir --delete ../kwbuild/log.world.qemux86*.20* .
+    rsync -avir --delete ../kwaj/build/log.world.qemux86*.20* .
 
     if [ "${BUILD_LOG_WORLD_DIRS}" = "LATEST" ] ; then
         BUILD_LOG_WORLD_DIRS=""
