@@ -193,21 +193,21 @@ function sanity-check {
 }
 
 function run_cleanup {
-    if [ -d ${BUILD_TOPDIR} ] ; then
-        cd ${BUILD_TOPDIR};
+    if [ -d ${BUILD_TOPDIR}/build ] ; then
+        cd ${BUILD_TOPDIR}/build;
         ARCHS="core2-64,i586,armv5te,aarch64,qemuarm,qemuarm64,qemux86,qemux86_64"
         DU1=`du -hs sstate-cache`
         echo "$DU1"
         OPENSSL="find sstate-cache -name '*:openssl:*populate_sysroot*tgz'"
         ARCHIVES1=`sh -c "${OPENSSL}"`; echo "number of openssl archives: `echo "$ARCHIVES1" | wc -l`"; echo "$ARCHIVES1"
-        sources/openembedded-core/scripts/sstate-cache-management.sh -L --cache-dir=sstate-cache -y -d --extra-archs=${ARCHS// /,} || true
+        ${BUILD_TOPDIR}/sources/openembedded-core/scripts/sstate-cache-management.sh -L --cache-dir=sstate-cache -y -d --extra-archs=${ARCHS// /,} || true
         DU2=`du -hs sstate-cache`
         echo "$DU2"
         ARCHIVES2=`sh -c "${OPENSSL}"`; echo "number of openssl archives: `echo "$ARCHIVES2" | wc -l`"; echo "$ARCHIVES2"
 
         mkdir -p old || true
         umount tmpfs || true
-        mv -f cache/bb_codeparser.dat* bitbake.lock pseudodone build/tmpfs* old || true
+        mv -f ${BUILD_TOPDIR}/cache/bb_codeparser.dat* ${BUILD_TOPDIR}/bitbake.lock ${BUILD_TOPDIR}/pseudodone ${BUILD_TOPDIR}/build/tmpfs* old || true
         rm -rf old
 
         echo "BEFORE:"
