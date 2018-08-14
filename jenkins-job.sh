@@ -404,6 +404,8 @@ LICENSE_FLAGS_WHITELIST_append = " commercial_libomxil "
 LICENSE_FLAGS_WHITELIST_append = " commercial_packagegroup-xfce-multimedia commercial_xfce4-mpc-plugin"
 LICENSE_FLAGS_WHITELIST_append = " commercial_xfmpc commercial_mpd "
 LICENSE_FLAGS_WHITELIST_append = " commercial_mpv "
+# epiphany
+LICENSE_FLAGS_WHITELIST_append = " commercial_faad2 "
 EOF
 }
 
