@@ -3,6 +3,7 @@
 BUILD_SCRIPT_VERSION="1.8.45"
 BUILD_SCRIPT_NAME=`basename ${0}`
 
+BUILD_BRANCH="oe/staging"
 # These are used by in following functions, declare them here so that
 # they are defined even when we're only sourcing this script
 BUILD_TIME_STR="TIME: ${BUILD_SCRIPT_NAME}-${BUILD_SCRIPT_VERSION} %e %S %U %P %c %w %R %F %M %x %C"
@@ -252,9 +253,10 @@ function run_prepare {
     cd ${BUILD_WORKSPACE}
     if [ ! -d ${BUILD_TOPDIR}/.git/ ] ; then
         git clone git://github.com/kraj/oe-build -b oe/staging
-    else
-        git pull
     fi
+    git checkout -b ${BUILD_BRANCH} origin/${BUILD_BRANCH} || git checkout ${BUILD_BRANCH}
+    git pull
+    git submodule update
     mkdir -p ${BUILD_TOPDIR}/build
     if [ ! -d ${BUILD_TOPDIR}/build/buildhistory/ ] ; then
         cd ${BUILD_TOPDIR}/build
