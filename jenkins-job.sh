@@ -258,7 +258,7 @@ function run_prepare {
     mkdir -p ${BUILD_TOPDIR}/build
     if [ ! -d ${BUILD_TOPDIR}/build/buildhistory/ ] ; then
         cd ${BUILD_TOPDIR}/build
-        git clone git://github.com/shr-project/jenkins-buildhistory.git buildhistory
+        git clone git@github.com:kraj/jenkins-buildhistory.git buildhistory
         cd buildhistory;
         git checkout -b oe-world origin/oe-world || git checkout -b oe-world
         cd ${BUILD_WORKSPACE}
