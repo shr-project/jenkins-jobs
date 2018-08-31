@@ -26,6 +26,13 @@ BUILD_QA_ISSUES="already-stripped libdir textrel build-deps file-rdeps version-g
 
 TMPFS="${BUILD_TOPDIR}/build/tmpfs"
 
+function report_error {
+    eval `grep -e "send-error-report " \
+          ${TMPFS}/log/cooker/${BUILD_MACHINE}/console-latest.log | \
+          sed 's/^.*send-error-report/send-error-report -y/' | \
+          sed 's/\[.*$//g'`
+}
+
 function print_timestamp {
     BUILD_TIMESTAMP=`date -u +%s`
     BUILD_TIMESTAMPH=`date -u +%Y%m%dT%TZ`
@@ -159,7 +166,7 @@ EOF
     cp conf/auto.conf ${LOGDIR}
     rsync -avir ${LOGDIR} ${LOG_RSYNC_DIR}
     cat ${LOGDIR}/qa.log && true
-
+    report_error
     # wait for pseudo
     sleep 180
     umount ${BUILD_TOPDIR}/build/tmpfs || echo "Umounting tmpfs failed"
@@ -242,7 +249,7 @@ function run_compare-signatures {
 
     [ -d sstate-diff ] || mkdir -p sstate-diff
     mv ${BUILD_TOPDIR}/build/tmpfs/sstate-diff/* sstate-diff
-
+    report_error
     umount ${BUILD_TOPDIR}/build/tmpfs || echo "Umounting tmpfs failed"
     rm -rf ${BUILD_TOPDIR}/build/tmpfs/*;
 
@@ -467,6 +474,8 @@ function run_test-dependencies {
     cp conf/auto.conf ${LOGDIR}
     rsync -avir ${LOGDIR} ${LOG_RSYNC_DIR}
     [ -s ${LOGDIR}/qa.log ] && cat ${LOGDIR}/qa.log
+
+    report_error
 
     # wait for pseudo
     sleep 180
