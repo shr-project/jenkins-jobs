@@ -27,6 +27,13 @@ BUILD_QA_ISSUES="already-stripped libdir textrel build-deps file-rdeps version-g
 TMPFS="${BUILD_TOPDIR}/build/tmpfs"
 
 function report_error {
+
+    if [ ! -e ${HOME}/.oe-send-error ]
+    then
+        echo `git config --get user.name` > ${HOME}/.oe-send-error
+        echo `git config --get user.email` >> ${HOME}/.oe-send-error
+    fi
+
     eval `grep -e "send-error-report " \
           ${TMPFS}/log/cooker/${BUILD_MACHINE}/console-latest.log | \
           sed 's/^.*send-error-report/send-error-report -y/' | \
