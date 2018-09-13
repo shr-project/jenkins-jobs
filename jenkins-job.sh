@@ -276,7 +276,7 @@ function run_prepare {
         cd ${BUILD_TOPDIR}/build
         git clone git@github.com:kraj/jenkins-buildhistory.git buildhistory
         cd buildhistory;
-        git checkout -b oe-world origin/oe-world || git checkout -b oe-world
+        git checkout -b oe-world-${HOSTNAME} origin/oe-world-${HOSTNAME} || git checkout -b oe-world-${HOSTNAME}
         cd ${BUILD_WORKSPACE}
     fi
     cat <<EOF > ${BUILD_TOPDIR}/conf/auto.conf
@@ -292,9 +292,10 @@ INHERIT += "rm_work"
 # Reminder to change it later when we have public instance
 PRSERV_HOST = "localhost:0"
 BB_GENERATE_MIRROR_TARBALLS = "1"
+BUILDHISTORY_DIR = "${BUILD_TOPDIR}/buildhistory"
 BUILDHISTORY_COMMIT ?= "1"
 BUILDHISTORY_COMMIT_AUTHOR ?= "Khem Raj <raj.khem@gmail.com>"
-BUILDHISTORY_PUSH_REPO ?= "origin oe-world"
+BUILDHISTORY_PUSH_REPO ?= "origin oe-world-${HOSTNAME}"
 INHERIT += "reproducible_build_simple"
 
 BB_DISKMON_DIRS = "\
