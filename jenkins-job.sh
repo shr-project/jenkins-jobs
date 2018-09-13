@@ -285,7 +285,7 @@ function run_prepare {
 TCLIBCAPPEND = "fs"
 
 TMPDIR = "${BUILD_TOPDIR}/build/tmpfs"
-
+DL_DIR = "${BUILD_TOPDIR}/../downloads"
 PARALLEL_MAKE = "-j 8"
 BB_NUMBER_THREADS = "16"
 INHERIT += "rm_work"
@@ -495,7 +495,8 @@ function run_test-dependencies {
 function run_rsync {
     cd ${BUILD_TOPDIR}/..
     rsync -avir --no-links --exclude '*.done' --exclude git2 --exclude hg \
-                           --exclude svn --exclude bzr downloads/      jenkins@milla.nao:~/htdocs/oe-sources
+          --exclude svn --exclude bzr downloads/ \
+          jenkins@milla.nas-admin.org:~/htdocs/oe-sources
 }
 function run_parse-results {
     cd ${BUILD_TOPDIR}
