@@ -289,6 +289,10 @@ DL_DIR = "${BUILD_TOPDIR}/../downloads"
 PARALLEL_MAKE = "-j 8"
 BB_NUMBER_THREADS = "16"
 INHERIT += "rm_work"
+
+# For kernel-selftest with linux 4.18+
+HOSTTOOLS += "clang llc"
+
 # Reminder to change it later when we have public instance
 PRSERV_HOST = "localhost:0"
 BB_GENERATE_MIRROR_TARBALLS = "1"
