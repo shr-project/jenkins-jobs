@@ -15,7 +15,7 @@ pushd `dirname $0` > /dev/null
 BUILD_WORKSPACE=`pwd -P`
 popd > /dev/null
 
-BUILD_DIR="oe-build"
+BUILD_DIR="yoe"
 BUILD_TOPDIR="${BUILD_WORKSPACE}/${BUILD_DIR}"
 BUILD_TIME_LOG=${BUILD_TOPDIR}/time.txt
 
@@ -266,7 +266,7 @@ function run_compare-signatures {
 function run_prepare {
     cd ${BUILD_WORKSPACE}
     if [ ! -d ${BUILD_TOPDIR}/.git/ ] ; then
-        git clone git://github.com/kraj/oe-build -b oe/staging
+        git clone git://github.com/YoeDistro/yoe-distro -b yoe/mut yoe
     fi
     git checkout -b ${BUILD_BRANCH} origin/${BUILD_BRANCH} || git checkout ${BUILD_BRANCH}
     git pull
@@ -510,7 +510,7 @@ function run_parse-results {
         exit 1
     fi
     # first we need to "import" qemux86 and qemux86-64 reports from kwaj
-    rsync -avir --delete ../kwaj/oe-build/log.world.qemux86*.20* .
+    rsync -avir --delete ../kwaj/yoe/log.world.qemux86*.20* .
 
     if [ "${BUILD_LOG_WORLD_DIRS}" = "LATEST" ] ; then
         BUILD_LOG_WORLD_DIRS=""
