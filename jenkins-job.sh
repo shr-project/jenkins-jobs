@@ -150,7 +150,7 @@ EOF
     git pull
     . ./envsetup.sh
 
-    oe_setup
+    yoe_setup
 
     show-git-log
     export LC_ALL=en_US.utf8
@@ -436,7 +436,7 @@ function run_test-dependencies {
     cd ${BUILD_TOPDIR}
     . ./envsetup.sh
 
-    oe_setup
+    yoe_setup
     export LC_ALL=en_US.utf8
 
     LOGDIR=log.dependencies.${MACHINE}.`date "+%Y%m%d_%H%M%S"`.log
