@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 BUILD_SCRIPT_VERSION="1.8.45"
 BUILD_SCRIPT_NAME=`basename ${0}`
@@ -266,7 +266,7 @@ function run_compare-signatures {
 function run_prepare {
     cd ${BUILD_WORKSPACE}
     if [ ! -d ${BUILD_TOPDIR}/.git/ ] ; then
-        git clone git://github.com/YoeDistro/yoe-distro yoe
+        git clone git://github.com/YoeDistro/yoe-distro -b ${BUILD_BRANCH} yoe
     fi
     git checkout -b ${BUILD_BRANCH} origin/${BUILD_BRANCH} || git checkout ${BUILD_BRANCH}
     git pull
