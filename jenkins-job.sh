@@ -269,8 +269,8 @@ function run_prepare {
         git clone git://github.com/YoeDistro/yoe-distro -b ${BUILD_BRANCH} yoe
     fi
     git checkout -b ${BUILD_BRANCH} origin/${BUILD_BRANCH} || git checkout ${BUILD_BRANCH}
-    git pull
-    git submodule update
+    yoe_setup
+    yoe_update_all
     mkdir -p ${BUILD_TOPDIR}/build
     if [ ! -d ${BUILD_TOPDIR}/build/buildhistory/ ] ; then
         cd ${BUILD_TOPDIR}/build
