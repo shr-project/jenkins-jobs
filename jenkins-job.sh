@@ -284,7 +284,7 @@ function run_prepare {
 # We want musl and glibc to share the same tmpfs, so instead of appending default "-${TCLIBC}" we append "fs"
 TCLIBCAPPEND = "fs"
 
-TMPDIR = "${BUILD_TOPDIR}/build/tmpfs"
+TMPDIR .= "fs"
 DL_DIR = "${BUILD_TOPDIR}/../downloads"
 PARALLEL_MAKE = "-j 8"
 BB_NUMBER_THREADS = "16"
