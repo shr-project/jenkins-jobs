@@ -170,7 +170,7 @@ EOF
     RESULT+=${PIPESTATUS[0]}
     cat ${BUILD_TOPDIR}/build/tmpfs/qa.log >> ${LOGDIR}/qa.log || echo "No QA issues";
 
-    cp conf/auto.conf ${LOGDIR}
+    cp conf/local.conf ${LOGDIR}
     rsync -avir ${LOGDIR} ${LOG_RSYNC_DIR}
     cat ${LOGDIR}/qa.log && true
     report_error
@@ -279,7 +279,7 @@ function run_prepare {
         git checkout -b oe-world-${HOSTNAME} origin/oe-world-${HOSTNAME} || git checkout -b oe-world-${HOSTNAME}
         cd ${BUILD_WORKSPACE}
     fi
-    cat <<EOF > ${BUILD_TOPDIR}/conf/auto.conf
+    cat <<EOF > ${BUILD_TOPDIR}/conf/local.conf
 
 # We want musl and glibc to share the same tmpfs, so instead of appending default "-${TCLIBC}" we append "fs"
 TCLIBCAPPEND = "fs"
@@ -483,7 +483,7 @@ function run_test-dependencies {
     ls ${OUTPUT}/2_max/failed/*.log >/dev/null 2>/dev/null && cp -l ${OUTPUT}/2_max/failed/*.log ${LOGDIR}/2_max/failed
     ls ${OUTPUT}/3_min/failed/*.log >/dev/null 2>/dev/null && cp -l ${OUTPUT}/3_min/failed/*.log ${LOGDIR}/3_min/failed
 
-    cp conf/auto.conf ${LOGDIR}
+    cp conf/local.conf ${LOGDIR}
     rsync -avir ${LOGDIR} ${LOG_RSYNC_DIR}
     [ -s ${LOGDIR}/qa.log ] && cat ${LOGDIR}/qa.log
 
@@ -533,7 +533,7 @@ function show-pnblacklists {
         git grep '^PNBLACKLIST\[.*=' . | tee;
         cd ../..;
     done | grep -v bec.conf | grep -v documentation.conf;
-    grep ^PNBLACKLIST conf/auto.conf
+    grep ^PNBLACKLIST conf/local.conf
 }
 
 function show-qa-issues {
