@@ -143,8 +143,8 @@ function run_build {
     declare -i RESULT=0
 
     cat <<EOF > ${BUILD_TOPDIR}/local.sh
-    export MACHINE=${BUILD_MACHINE}
-
+export MACHINE=${BUILD_MACHINE}
+export DOCKER_REPO="none"
 EOF
     cd ${BUILD_TOPDIR}
     git pull
@@ -279,9 +279,6 @@ function run_prepare {
         git checkout -b oe-world-${HOSTNAME} origin/oe-world-${HOSTNAME} || git checkout -b oe-world-${HOSTNAME}
         cd ${BUILD_WORKSPACE}
     fi
-    cat <<EOF > ${BUILD_TOPDIR}/local.sh
-export DOCKER_REPO="none"
-EOF
     cat <<EOF > ${BUILD_TOPDIR}/conf/local.conf
 
 # We want musl and glibc to share the same tmpfs, so instead of appending default "-${TCLIBC}" we append "fs"
