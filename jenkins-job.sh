@@ -279,6 +279,9 @@ function run_prepare {
         git checkout -b oe-world-${HOSTNAME} origin/oe-world-${HOSTNAME} || git checkout -b oe-world-${HOSTNAME}
         cd ${BUILD_WORKSPACE}
     fi
+    cat <<EOF > ${BUILD_TOPDIR}/local.sh
+export DOCKER_REPO="none"
+EOF
     cat <<EOF > ${BUILD_TOPDIR}/conf/local.conf
 
 # We want musl and glibc to share the same tmpfs, so instead of appending default "-${TCLIBC}" we append "fs"
