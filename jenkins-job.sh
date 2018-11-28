@@ -272,10 +272,10 @@ function run_prepare {
     yoe_setup
     yoe_update_all
     mkdir -p ${BUILD_TOPDIR}/build
-    if [ ! -d ${BUILD_TOPDIR}/build/buildhistory/ ] ; then
-        cd ${BUILD_TOPDIR}/build
+    if [ ! -d ${BUILD_TOPDIR}/buildhistory/ ] ; then
+        cd ${BUILD_TOPDIR}
         git clone git@github.com:kraj/jenkins-buildhistory.git buildhistory
-        cd buildhistory;
+        cd buildhistory
         git checkout -b oe-world-${HOSTNAME} origin/oe-world-${HOSTNAME} || git checkout -b oe-world-${HOSTNAME}
         cd ${BUILD_WORKSPACE}
     fi
@@ -448,7 +448,6 @@ function run_test-dependencies {
 
     [ -f failed-recipes.${MACHINE} ] || bitbake-layers show-recipes | grep '^[^ ].*:' | grep -v '^=' | sed 's/:$//g' | sort -u > failed-recipes.${MACHINE}
     [ -f failed-recipes.${MACHINE} ] && RECIPES="--recipes=failed-recipes.${MACHINE}"
-    pushd build
     # backup full buildhistory and replace it with link to tmpfs
     mv buildhistory buildhistory-all
     mkdir -p ${BUILD_TOPDIR}/build/tmpfs/buildhistory
@@ -462,7 +461,6 @@ function run_test-dependencies {
     rm -rf buildhistory
     mv buildhistory-all buildhistory
 
-    popd
     cat ${BUILD_TOPDIR}/build/tmpfs/qa.log >> ${LOGDIR}/qa.log 2>/dev/null || echo "No QA issues";
 
     OUTPUT=`grep "INFO: Output written in: " ${LOGDIR}/test-dependencies.log | sed 's/INFO: Output written in: //g'`
