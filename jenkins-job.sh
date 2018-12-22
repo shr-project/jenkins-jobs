@@ -2,6 +2,8 @@
 
 BUILD_SCRIPT_VERSION="1.8.45"
 BUILD_SCRIPT_NAME=`basename ${0}`
+SRCMIRROR="10.20.9.193"
+LOGMIRROR="10.20.9.193"
 
 BUILD_BRANCH="yoe/mut"
 # These are used by in following functions, declare them here so that
@@ -19,7 +21,7 @@ BUILD_DIR="yoe"
 BUILD_TOPDIR="${BUILD_WORKSPACE}/${BUILD_DIR}"
 BUILD_TIME_LOG=${BUILD_TOPDIR}/time.txt
 
-LOG_RSYNC_DIR="jenkins@logs.nslu2-linux.org:htdocs/buildlogs/oe/world/warrior"
+LOG_RSYNC_DIR="jenkins@${LOGMIRROR}:htdocs/buildlogs/oe/world/warrior"
 LOG_HTTP_ROOT="http://logs.nslu2-linux.org/buildlogs/oe/world/warrior/"
 
 BUILD_QA_ISSUES="already-stripped libdir textrel build-deps file-rdeps version-going-backwards host-user-contaminated installed-vs-shipped unknown-configure-option symlink-to-sysroot invalid-pkgconfig pkgname ldflags compile-host-path qa_pseudo"
@@ -499,7 +501,7 @@ function run_rsync {
     cd ${BUILD_TOPDIR}/..
     rsync -avir --no-links --exclude '*.done' --exclude git2 --exclude hg \
           --exclude svn --exclude bzr downloads/ \
-          jenkins@milla.nas-admin.org:~/htdocs/oe-sources
+          jenkins@${SRCMIRROR}:~/htdocs/oe-sources
 }
 function run_parse-results {
     cd ${BUILD_TOPDIR}
