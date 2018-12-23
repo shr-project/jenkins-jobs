@@ -499,10 +499,13 @@ function run_test-dependencies {
 
 function run_rsync {
     cd ${BUILD_TOPDIR}/..
-    rsync -avir --no-links --exclude '*.done' --exclude git2 --exclude hg \
-          --exclude svn --exclude bzr downloads/ \
-          jenkins@${SRCMIRROR}:~/htdocs/oe-sources
+    rsync -avir --no-links \
+      --exclude '*_bad-checksum_*' '*.done' \
+      --exclude git2 --exclude hg \
+      --exclude svn --exclude bzr downloads/ \
+      jenkins@${SRCMIRROR}:~/htdocs/oe-sources
 }
+
 function run_parse-results {
     cd ${BUILD_TOPDIR}
     if [ -z "${BUILD_LOG_WORLD_DIRS}" ] ; then
