@@ -288,8 +288,8 @@ TCLIBCAPPEND = "fs"
 
 TMPDIR .= "fs"
 DL_DIR = "${BUILD_TOPDIR}/../downloads"
-PARALLEL_MAKE = "-j 16"
-BB_NUMBER_THREADS = "12"
+PARALLEL_MAKE = "-j 20"
+BB_NUMBER_THREADS = "10"
 INHERIT += "rm_work"
 
 # For kernel-selftest with linux 4.18+
