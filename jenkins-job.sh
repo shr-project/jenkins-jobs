@@ -210,6 +210,17 @@ function sanity-check {
 }
 
 function run_cleanup {
+    cd ${BUILD_TOPDIR}
+    . ./envsetup.sh
+
+    mkdir -p ${BUILD_TOPDIR}/build
+    if [ ! -d ${BUILD_TOPDIR}/buildhistory/ ] ; then
+        cd ${BUILD_TOPDIR}
+        git clone git@github.com:kraj/jenkins-buildhistory.git buildhistory
+        cd buildhistory
+        git checkout -b oe-world-${HOSTNAME} origin/oe-world-${HOSTNAME} || git checkout -b oe-world-${HOSTNAME}
+        cd ${BUILD_WORKSPACE}
+    fi
     if [ -d ${BUILD_TOPDIR}/build ] ; then
         cd ${BUILD_TOPDIR}/build;
         ARCHS="core2-64,i586,armv5te,aarch64,qemuarm,qemuarm64,qemux86,qemux86_64"
@@ -271,16 +282,6 @@ function run_prepare {
         git clone git://github.com/YoeDistro/yoe-distro -b ${BUILD_BRANCH} yoe
     fi
     git checkout -b ${BUILD_BRANCH} origin/${BUILD_BRANCH} || git checkout ${BUILD_BRANCH}
-    yoe_setup
-    yoe_update_all
-    mkdir -p ${BUILD_TOPDIR}/build
-    if [ ! -d ${BUILD_TOPDIR}/buildhistory/ ] ; then
-        cd ${BUILD_TOPDIR}
-        git clone git@github.com:kraj/jenkins-buildhistory.git buildhistory
-        cd buildhistory
-        git checkout -b oe-world-${HOSTNAME} origin/oe-world-${HOSTNAME} || git checkout -b oe-world-${HOSTNAME}
-        cd ${BUILD_WORKSPACE}
-    fi
     cat <<EOF > ${BUILD_TOPDIR}/conf/local.conf
 
 # We want musl and glibc to share the same tmpfs, so instead of appending default "-${TCLIBC}" we append "fs"
@@ -430,6 +431,19 @@ LICENSE_FLAGS_WHITELIST_append = " commercial_mpv "
 # epiphany
 LICENSE_FLAGS_WHITELIST_append = " commercial_faad2 "
 EOF
+    cd ${BUILD_TOPDIR}
+    . ./envsetup.sh
+
+    yoe_setup
+    yoe_update_all
+    mkdir -p ${BUILD_TOPDIR}/build
+    if [ ! -d ${BUILD_TOPDIR}/buildhistory/ ] ; then
+        cd ${BUILD_TOPDIR}
+        git clone git@github.com:kraj/jenkins-buildhistory.git buildhistory
+        cd buildhistory
+        git checkout -b oe-world-${HOSTNAME} origin/oe-world-${HOSTNAME} || git checkout -b oe-world-${HOSTNAME}
+        cd ${BUILD_WORKSPACE}
+    fi
 }
 
 function run_test-dependencies {
