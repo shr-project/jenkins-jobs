@@ -518,11 +518,11 @@ function run_test-dependencies {
 }
 
 function run_rsync {
-    cd ${BUILD_TOPDIR}/..
+    cd ${BUILD_TOPDIR}/../downloads
     rsync -avir --no-links \
       --exclude '*_bad-checksum_*' '*.done' \
       --exclude git2 --exclude hg \
-      --exclude svn --exclude bzr downloads/ \
+      --exclude svn --exclude bzr ./ \
       jenkins@${SRCMIRROR}:~/htdocs/oe-sources
 }
 
