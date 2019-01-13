@@ -66,19 +66,19 @@ function parse_job_name {
     case ${JOB_NAME} in
         *_qemuarm)
             BUILD_MACHINE="qemuarm"
-            DISTRO=yoe-glibc-systemd-wayland
+            export DISTRO=yoe-glibc-systemd-wayland
             ;;
         *_qemuarm64)
             BUILD_MACHINE="qemuarm64"
-            DISTRO=yoe-glibc-systemd-wayland
+            export DISTRO=yoe-glibc-systemd-wayland
             ;;
         *_qemux86)
             BUILD_MACHINE="qemux86"
-            DISTRO=yoe-musl-systemd-wayland
+            export DISTRO=yoe-musl-systemd-wayland
             ;;
         *_qemux86-64)
             BUILD_MACHINE="qemux86-64"
-            DISTRO=yoe-glibc-systemd-wayland
+            export DISTRO=yoe-glibc-systemd-wayland
             ;;
         *_workspace-*)
             # global jobs
