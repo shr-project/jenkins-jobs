@@ -72,6 +72,7 @@ function parse_job_name {
             ;;
         *_qemux86)
             BUILD_MACHINE="qemux86"
+            DISTRO=yoe-musl-sysvinit-wayland
             ;;
         *_qemux86-64)
             BUILD_MACHINE="qemux86-64"
@@ -145,12 +146,11 @@ function run_build {
     declare -i RESULT=0
 
     cat <<EOF > ${BUILD_TOPDIR}/local.sh
-export MACHINE=${BUILD_MACHINE}
 export DOCKER_REPO="none"
 EOF
     cd ${BUILD_TOPDIR}
     git pull
-    . ./envsetup.sh
+    . ./${BUILD_MACHINE}-envsetup.sh
 
     yoe_setup
 
@@ -211,7 +211,7 @@ function sanity-check {
 
 function run_cleanup {
     cd ${BUILD_TOPDIR}
-    . ./envsetup.sh
+    . ./${BUILD_MACHINE}-envsetup.sh
 
     mkdir -p ${BUILD_TOPDIR}/build
     if [ ! -d ${BUILD_TOPDIR}/buildhistory/ ] ; then
@@ -252,7 +252,7 @@ function run_compare-signatures {
 
     cd ${BUILD_TOPDIR}
     export LC_ALL=en_US.utf8
-    . ./envsetup.sh
+    . ./${BUILD_MACHINE}-envsetup.sh
 
     LOGDIR=log.signatures.`date "+%Y%m%d_%H%M%S"`.log
     mkdir -p ${LOGDIR}
@@ -409,10 +409,6 @@ INHERIT += "buildstats buildstats-summary"
 ERROR_QA_append = " ldflags useless-rpaths rpaths staticdev libdir xorg-driver-abi             textrel already-stripped incompatible-license files-invalid             installed-vs-shipped compile-host-path install-host-path             pn-overrides infodir build-deps             unknown-configure-option symlink-to-sysroot multilib             invalid-packageconfig host-user-contaminated uppercase-pn"
 WARN_QA_remove = " ldflags useless-rpaths rpaths staticdev libdir xorg-driver-abi             textrel already-stripped incompatible-license files-invalid             installed-vs-shipped compile-host-path install-host-path             pn-overrides infodir build-deps             unknown-configure-option symlink-to-sysroot multilib             invalid-packageconfig host-user-contaminated uppercase-pn"
 
-# use musl for qemux86 and qemux86copy
-DISTRO_qemux86 = "yoe-musl-sysvinit-wayland"
-DISTRO_qemux86copy = "yoe-musl-sysvinit-wayland"
-
 # Commericial licenses
 # chromium
 LICENSE_FLAGS_WHITELIST_append = " commercial_ffmpeg commercial_x264 "
@@ -438,7 +434,7 @@ LICENSE_FLAGS_WHITELIST_append = " commercial_mpv "
 LICENSE_FLAGS_WHITELIST_append = " commercial_faad2 "
 EOF
     cd ${BUILD_TOPDIR}
-    . ./envsetup.sh
+    . ./${BUILD_MACHINE}-envsetup.sh
 
     yoe_setup
     yoe_update_all
@@ -454,22 +450,21 @@ EOF
 
 function run_test-dependencies {
     declare -i RESULT=0
-    export MACHINE=${BUILD_MACHINE}
     cd ${BUILD_TOPDIR}
-    . ./envsetup.sh
+    . ./${BUILD_MACHINE}-envsetup.sh
 
     yoe_setup
     export LC_ALL=en_US.utf8
 
-    LOGDIR=log.dependencies.${MACHINE}.`date "+%Y%m%d_%H%M%S"`.log
+    LOGDIR=log.dependencies.${BUILD_MACHINE}.`date "+%Y%m%d_%H%M%S"`.log
     mkdir -p ${LOGDIR}
 
     rm -rf ${BUILD_TOPDIR}/build/tmpfs/*;
     [ -d ${BUILD_TOPDIR}/build/tmpfs ] || mkdir -p ${BUILD_TOPDIR}/build/tmpfs
     mount | grep "tmpfs type tmpfs" && echo "Some tmpfs already has tmpfs mounted, skipping mount" || mount build/tmpfs
 
-    [ -f failed-recipes.${MACHINE} ] || bitbake-layers show-recipes | grep '^[^ ].*:' | grep -v '^=' | sed 's/:$//g' | sort -u > failed-recipes.${MACHINE}
-    [ -f failed-recipes.${MACHINE} ] && RECIPES="--recipes=failed-recipes.${MACHINE}"
+    [ -f failed-recipes.${BUILD_MACHINE} ] || bitbake-layers show-recipes | grep '^[^ ].*:' | grep -v '^=' | sed 's/:$//g' | sort -u > failed-recipes.${BUILD_MACHINE}
+    [ -f failed-recipes.${BUILD_MACHINE} ] && RECIPES="--recipes=failed-recipes.${BUILD_MACHINE}"
     # backup full buildhistory and replace it with link to tmpfs
     mv buildhistory buildhistory-all
     mkdir -p ${BUILD_TOPDIR}/build/tmpfs/buildhistory
@@ -493,7 +488,7 @@ function run_test-dependencies {
     [ -d ${LOGDIR}/3_min/failed ] || mkdir -p ${LOGDIR}/3_min/failed
 
     for f in dependency-changes.error.log dependency-changes.warn.log \
-             failed-recipes.${MACHINE} failed-recipes.log 1_all/complete.log \
+             failed-recipes.${BUILD_MACHINE} failed-recipes.log 1_all/complete.log \
              1_all/failed-tasks.log 1_all/failed-recipes.log \
              2_max/failed-tasks.log 2_max/failed-recipes.log \
              3_min/failed-tasks.log 3_min/failed-recipes.log; do
