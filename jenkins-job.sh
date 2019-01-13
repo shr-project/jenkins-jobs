@@ -410,8 +410,8 @@ ERROR_QA_append = " ldflags useless-rpaths rpaths staticdev libdir xorg-driver-a
 WARN_QA_remove = " ldflags useless-rpaths rpaths staticdev libdir xorg-driver-abi             textrel already-stripped incompatible-license files-invalid             installed-vs-shipped compile-host-path install-host-path             pn-overrides infodir build-deps             unknown-configure-option symlink-to-sysroot multilib             invalid-packageconfig host-user-contaminated uppercase-pn"
 
 # use musl for qemux86 and qemux86copy
-TCLIBC_qemux86 = "musl"
-TCLIBC_qemux86copy = "musl"
+DISTRO_qemux86 = "yoe-musl-sysvinit-wayland"
+DISTRO_qemux86copy = "yoe-musl-sysvinit-wayland"
 
 # Commericial licenses
 # chromium
