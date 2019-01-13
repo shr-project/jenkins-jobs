@@ -66,16 +66,19 @@ function parse_job_name {
     case ${JOB_NAME} in
         *_qemuarm)
             BUILD_MACHINE="qemuarm"
+            DISTRO=yoe-glibc-systemd-wayland
             ;;
         *_qemuarm64)
             BUILD_MACHINE="qemuarm64"
+            DISTRO=yoe-glibc-systemd-wayland
             ;;
         *_qemux86)
             BUILD_MACHINE="qemux86"
-            DISTRO=yoe-musl-sysvinit-wayland
+            DISTRO=yoe-musl-systemd-wayland
             ;;
         *_qemux86-64)
             BUILD_MACHINE="qemux86-64"
+            DISTRO=yoe-glibc-systemd-wayland
             ;;
         *_workspace-*)
             # global jobs
@@ -317,7 +320,6 @@ BB_DISKMON_DIRS = "\
 
 #require world_fixes.inc
 
-PREFERRED_PROVIDER_udev = "systemd"
 PREFERRED_PROVIDER_virtual/fftw = "fftw"
 
 # use gold
@@ -326,17 +328,8 @@ DISTRO_FEATURES_append = " ld-is-gold"
 # use ptest
 DISTRO_FEATURES_append = " ptest"
 
-# use systemd
-DISTRO_FEATURES_append = " systemd"
-DISTRO_FEATURES_BACKFILL_CONSIDERED = "sysvinit"
-VIRTUAL-RUNTIME_init_manager = "systemd"
-VIRTUAL-RUNTIME_initscripts = ""
-
 # use opengl
 DISTRO_FEATURES_append = " opengl"
-
-# use wayland to fix building weston and qtwayland
-DISTRO_FEATURES_append = " wayland"
 
 PREFERRED_PROVIDER_jpeg = "libjpeg-turbo"
 PREFERRED_PROVIDER_jpeg-native = "libjpeg-turbo-native"
