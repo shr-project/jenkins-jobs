@@ -214,7 +214,7 @@ function sanity-check {
 
 function run_cleanup {
     cd ${BUILD_TOPDIR}
-    . ./${BUILD_MACHINE}-envsetup.sh
+    . ./envsetup.sh
 
     mkdir -p ${BUILD_TOPDIR}/build
     if [ ! -d ${BUILD_TOPDIR}/buildhistory/ ] ; then
@@ -255,7 +255,7 @@ function run_compare-signatures {
 
     cd ${BUILD_TOPDIR}
     export LC_ALL=en_US.utf8
-    . ./${BUILD_MACHINE}-envsetup.sh
+    . ./envsetup.sh
 
     LOGDIR=log.signatures.`date "+%Y%m%d_%H%M%S"`.log
     mkdir -p ${LOGDIR}
@@ -444,7 +444,7 @@ EOF
 function run_test-dependencies {
     declare -i RESULT=0
     cd ${BUILD_TOPDIR}
-    . ./${BUILD_MACHINE}-envsetup.sh
+    . ./envsetup.sh
 
     yoe_setup
     export LC_ALL=en_US.utf8
