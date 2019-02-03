@@ -81,6 +81,7 @@ function parse_job_name {
             export DISTRO=yoe-glibc-systemd-wayland
             ;;
         *_workspace-*)
+            BUILD_MACHINE="qemuarm"
             # global jobs
             ;;
         *)
@@ -214,7 +215,7 @@ function sanity-check {
 
 function run_cleanup {
     cd ${BUILD_TOPDIR}
-    . ./envsetup.sh
+    . ./${BUILD_MACHINE}-envsetup.sh
 
     mkdir -p ${BUILD_TOPDIR}/build
     if [ ! -d ${BUILD_TOPDIR}/buildhistory/ ] ; then
@@ -255,7 +256,7 @@ function run_compare-signatures {
 
     cd ${BUILD_TOPDIR}
     export LC_ALL=en_US.utf8
-    . ./envsetup.sh
+    . ./${BUILD_MACHINE}-envsetup.sh
 
     LOGDIR=log.signatures.`date "+%Y%m%d_%H%M%S"`.log
     mkdir -p ${LOGDIR}
@@ -444,7 +445,7 @@ EOF
 function run_test-dependencies {
     declare -i RESULT=0
     cd ${BUILD_TOPDIR}
-    . ./envsetup.sh
+    . ./${BUILD_MACHINE}-envsetup.sh
 
     yoe_setup
     export LC_ALL=en_US.utf8
