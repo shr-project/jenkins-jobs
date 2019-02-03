@@ -542,7 +542,7 @@ function run_parse-results {
 function show-pnblacklists {
     cd ${BUILD_TOPDIR}
     echo "PNBLACKLISTs:";
-    for i in openembedded-core meta-*; do
+    for i in `ls -d openembedded-core meta-*`; do
         cd sources/$i;
         echo "$i:";
         git grep '^PNBLACKLIST\[.*=' . | tee;
