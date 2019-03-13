@@ -293,8 +293,10 @@ TCLIBCAPPEND = "fs"
 
 TMPDIR .= "fs"
 DL_DIR = "${BUILD_TOPDIR}/../downloads"
-PARALLEL_MAKE = "-j 20"
-BB_NUMBER_THREADS = "10"
+
+PARALLEL_MAKE_append = " \
+-l ${@int(os.sysconf(os.sysconf_names['SC_NPROCESSORS_ONLN'])) * 150/100} \
+"
 INHERIT += "rm_work"
 
 # For kernel-selftest with linux 4.18+
