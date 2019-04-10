@@ -428,6 +428,9 @@ LICENSE_FLAGS_WHITELIST_append = " commercial_xfmpc commercial_mpd "
 LICENSE_FLAGS_WHITELIST_append = " commercial_mpv "
 # epiphany
 LICENSE_FLAGS_WHITELIST_append = " commercial_faad2 "
+
+# required for Freescale stuff to build
+ACCEPT_FSL_EULA = "1"
 EOF
     cd ${BUILD_TOPDIR}
     . ./${BUILD_MACHINE}-envsetup.sh
