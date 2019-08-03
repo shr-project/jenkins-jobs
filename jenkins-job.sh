@@ -432,9 +432,15 @@ ACCEPT_FSL_EULA = "1"
 EOF
     cd ${BUILD_TOPDIR}
     . ./${BUILD_MACHINE}-envsetup.sh
-
+    git checkout conf/bblayers.conf
     yoe_setup
     yoe_update_all
+    # delete extra layers so we can complete builds in time
+    sed -i -e "/sources\/meta-browser/d" conf/bblayers.conf
+    sed -i -e "/sources\/meta-rust/d" conf/bblayers.conf
+    sed -i -e "/sources\/meta-qt5/d" conf/bblayers.conf
+    sed -i -e "/sources\/meta-clang/d" conf/bblayers.conf
+
     mkdir -p ${BUILD_TOPDIR}/build
     if [ ! -d ${BUILD_TOPDIR}/buildhistory/ ] ; then
         cd ${BUILD_TOPDIR}
