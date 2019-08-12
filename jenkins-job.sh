@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-BUILD_SCRIPT_VERSION="1.8.45"
+BUILD_SCRIPT_VERSION="1.8.46"
 BUILD_SCRIPT_NAME=`basename ${0}`
 SRCMIRROR="10.20.9.193"
 LOGMIRROR="10.20.9.193"
@@ -377,8 +377,8 @@ PNBLACKLIST[android-system] = "depends on lxc from meta-virtualiazation which is
 PNBLACKLIST[bigbuckbunny-1080p] = "big and doesn't really need to be tested so much"
 PNBLACKLIST[bigbuckbunny-480p] = "big and doesn't really need to be tested so much"
 PNBLACKLIST[bigbuckbunny-720p] = "big and doesn't really need to be tested so much"
-PNBLACKLIST[bigbuckbunny-720p] = "big and doesn't really need to be tested so much"
 PNBLACKLIST[tearsofsteel-1080p] = "big and doesn't really need to be tested so much"
+RDEPENDS_packagegroup-meta-multimedia_remove_pn-packagegroup-meta-multimedia = "bigbuckbunny-1080p bigbuckbunny-480p bigbuckbunny-720p tearsofsteel-1080p"
 PNBLACKLIST[build-appliance-image] = "tries to include whole downloads directory in /home/builder/poky :/"
 PNBLACKLIST[smartrefrigerator] = "Needs porting to QT > 5.6"
 PNBLACKLIST[qmlbrowser] = "Needs porting to QT > 5.6"
